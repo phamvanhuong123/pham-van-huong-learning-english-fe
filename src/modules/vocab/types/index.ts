@@ -63,3 +63,20 @@ export interface CSVVocabRow {
   example?: string;
   topic?: string;
 }
+
+// ─── Flashcard Session types ──────────────────────────────────────────────────
+export interface SessionSummary {
+  again: number;
+  hard: number;
+  good: number;
+  easy: number;
+  total: number;
+}
+
+export interface FlashcardSession {
+  queue: Vocab[];
+  currentIndex: number;
+  summary: SessionSummary;
+  isFinished: boolean;
+}
+

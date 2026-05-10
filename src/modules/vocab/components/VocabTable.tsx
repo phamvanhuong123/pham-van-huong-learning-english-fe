@@ -88,10 +88,7 @@ export function VocabTable({
           <TableRow className="bg-muted/30">
             <TableHead className="w-10">
               <Checkbox
-                checked={allSelected}
-                ref={(el) => {
-                  if (el) (el as HTMLButtonElement & { indeterminate?: boolean }).indeterminate = someSelected;
-                }}
+                checked={someSelected ? 'indeterminate' : allSelected}
                 onCheckedChange={(checked) => onSelectAll(!!checked)}
                 aria-label="Chọn tất cả"
                 id="vocab-select-all"

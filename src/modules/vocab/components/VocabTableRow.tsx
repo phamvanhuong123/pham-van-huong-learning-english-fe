@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Pencil, Trash2, Check, X } from 'lucide-react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,14 @@ export function VocabTableRow({
   const [editMode, setEditMode] = useState(false);
   const [draftMeaning, setDraftMeaning] = useState(vocab.meaning);
   const [draftTopic, setDraftTopic] = useState(vocab.topic ?? '');
+
+  // Sync draft with props when not editing
+  useEffect(() => {
+    if (!editMode) {
+      setDraftMeaning(vocab.meaning);
+      setDraftTopic(vocab.topic ?? '');
+    }
+  }, [vocab.meaning, vocab.topic, editMode]);
 
   const handleSave = () => {
     const payload: { meaning?: string; topic?: string } = {};

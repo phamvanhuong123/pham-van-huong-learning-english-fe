@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Search, Filter, Upload, Plus, Trash2 } from 'lucide-react';
+import { Search, Filter, Upload, Plus, Trash2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -16,7 +17,6 @@ import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { ImportCSVDialog } from './ImportCSVDialog';
 import {
   fetchVocabs,
-  deleteVocab,
   bulkDeleteVocab,
   updateVocab,
   bulkImportVocab,
@@ -40,6 +40,7 @@ const WARN_THRESHOLD = 45;
 
 export function VocabManagerContainer() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // ─── Filter state ──────────────────────────────────────────────────────────
   const [search, setSearch] = useState('');
@@ -103,44 +104,35 @@ export function VocabManagerContainer() {
     [vocabs]
   );
 
-  // ─── Delete single ─────────────────────────────────────────────────────────
-  const { mutate: deleteSingle } = useMutation({
-    mutationFn: deleteVocab,
-    onMutate: (id) => {
-      setDeletingIds((prev) => new Set(prev).add(id));
-    },
-    onSuccess: (_, id) => {
-      toast.success('Đã xóa từ thành công');
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-      void queryClient.invalidateQueries({ queryKey: ['vocabs'] });
-    },
-    onError: () => {
-      toast.error('Xóa từ thất bại. Vui lòng thử lại.');
-    },
-    onSettled: (_, __, id) => {
-      setDeletingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    },
-  });
-
   // ─── Bulk delete ───────────────────────────────────────────────────────────
   const { mutate: deleteBulk, isPending: isBulkDeleting } = useMutation({
     mutationFn: (ids: string[]) => bulkDeleteVocab(ids),
-    onSuccess: (result) => {
+    onMutate: (ids) => {
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        ids.forEach(id => next.add(id));
+        return next;
+      });
+    },
+    onSuccess: (result, ids) => {
       toast.success(`Đã xóa ${result.deleted} từ thành công`);
-      setSelectedIds(new Set());
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        ids.forEach(id => next.delete(id));
+        return next;
+      });
       setDeleteDialog({ open: false, ids: [] });
       void queryClient.invalidateQueries({ queryKey: ['vocabs'] });
     },
     onError: () => {
       toast.error('Xóa thất bại. Vui lòng thử lại.');
+    },
+    onSettled: (_, __, ids) => {
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        ids.forEach(id => next.delete(id));
+        return next;
+      });
     },
   });
 
@@ -174,27 +166,30 @@ export function VocabManagerContainer() {
   });
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
-  const handleDeleteSingle = (id: string) => {
+  const handleDeleteSingle = useCallback((id: string) => {
     setDeleteDialog({ open: true, ids: [id] });
-  };
+  }, []);
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = useCallback(() => {
     setDeleteDialog({ open: true, ids: Array.from(selectedIds) });
-  };
+  }, [selectedIds]);
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = useCallback(() => {
     deleteBulk(deleteDialog.ids);
-  };
+  }, [deleteBulk, deleteDialog.ids]);
 
-  const handleUpdate = (id: string, updateData: { meaning?: string; topic?: string }) => {
-    doUpdate({ id, data: updateData });
-  };
+  const handleUpdate = useCallback(
+    (id: string, updateData: { meaning?: string; topic?: string }) => {
+      doUpdate({ id, data: updateData });
+    },
+    [doUpdate]
+  );
 
   // ─── Limit info ────────────────────────────────────────────────────────────
-  const isStandard = limitInfo?.max !== null;
+  const isStandard = limitInfo ? limitInfo.max !== null : false;
   const usedCount = limitInfo?.used ?? 0;
   const maxCount = limitInfo?.max ?? STANDARD_LIMIT;
-  const isNearLimit = isStandard && usedCount >= WARN_THRESHOLD;
+  const isNearLimit = isStandard && usedCount >= (limitInfo?.warnThreshold ?? WARN_THRESHOLD);
   const progressPct = isStandard ? Math.min((usedCount / maxCount) * 100, 100) : 0;
 
   return (
@@ -224,13 +219,27 @@ export function VocabManagerContainer() {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => navigate('/dashboard/vocab/practice')}
+            id="vocab-practice-btn"
+            className="border-accent text-accent hover:bg-accent/5"
+          >
+            <BookOpen className="h-4 w-4 mr-1.5" />
+            Ôn tập ngay
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setImportDialog(true)}
             id="vocab-import-btn"
           >
             <Upload className="h-4 w-4 mr-1.5" />
             Import CSV
           </Button>
-          <Button size="sm" id="vocab-add-btn">
+          <Button 
+            size="sm" 
+            id="vocab-add-btn"
+            onClick={() => toast.info('Tính năng thêm từng từ đang được cập nhật. Vui lòng dùng Import CSV.')}
+          >
             <Plus className="h-4 w-4 mr-1.5" />
             Thêm từ
           </Button>
