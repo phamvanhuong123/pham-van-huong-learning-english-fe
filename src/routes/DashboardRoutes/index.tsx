@@ -4,6 +4,8 @@ import VocabManagerPage from "@/modules/vocab/pages/VocabManagerPage";
 import FlashcardPage from "@/modules/vocab/pages/FlashcardPage";
 import DashboardPage from "@/modules/dashboard/pages/DashboardPage";
 import ProfilePage from "@/modules/profile/pages/ProfilePage";
+import ExamLibraryPage from "@/modules/exams/pages/ExamLibraryPage";
+import ExamHistoryPage from "@/modules/exams/pages/ExamHistoryPage";
 
 function DashboardRoutes(){
     return<Route path="/dashboard" element={<DashboardLayout/>}>
@@ -11,6 +13,8 @@ function DashboardRoutes(){
         <Route path="vocab" element={<VocabManagerPage />} />
         <Route path="vocab/practice" element={<FlashcardPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="exams" element={<ExamLibraryPage />} />
+        <Route path="history" element={<ExamHistoryPage />} />
     </Route>
 }
 export default DashboardRoutes
