@@ -1,6 +1,10 @@
+import { Outlet } from 'react-router';
+
 function DashboardLayout() {
-    return <>
-     Layout Admin
-    </>
+    return (
+        <div className="min-h-screen bg-background">
+            <Outlet />
+        </div>
+    );
 }
-export default DashboardLayout
+export default DashboardLayout
