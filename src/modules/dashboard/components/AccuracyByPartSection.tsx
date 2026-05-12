@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import type { AccuracyByPartProps } from '../types';
+import type { AccuracyByPartProps } from '@/types/dashboard';
 
 interface PartBarProps {
   label: string;

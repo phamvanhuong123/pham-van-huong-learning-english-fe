@@ -20,9 +20,9 @@ import {
   bulkDeleteVocab,
   updateVocab,
   bulkImportVocab,
-} from '../api/vocabApi';
+} from '@/services/vocabApi';
 import { cn } from '@/lib/utils';
-import type { SM2Status, VocabFilter, CSVVocabRow } from '../types';
+import type { SM2Status, VocabFilter, CSVVocabRow } from '@/types/vocab';
 
 // ─── Debounce hook ────────────────────────────────────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/modules/auth/store/useAuthStore';
 import { useExamStore } from './store/useExamStore';
-import { fetchExamById } from './api/examApi';
+import { fetchExamById } from '@/services/workspaceExamApi';
 import { WorkspaceSkeleton } from './components/WorkspaceSkeleton';
 import { ExamTimer } from '@/components/exam/ExamTimer';
 import { QuestionPalette } from '@/components/exam/QuestionPalette';
@@ -59,6 +59,7 @@ export const ExamWorkspacePage = () => {
   } = useSubmitExam({
     examId: examId!,
     totalQuestions: exam?.questions.length || 0,
+    duration: exam?.duration || 0,
   });
 
   if (isLoading) {

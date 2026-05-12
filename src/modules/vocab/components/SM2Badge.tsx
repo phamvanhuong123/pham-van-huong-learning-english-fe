@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { SM2Status } from '../types';
+import type { SM2Status } from '@/types/vocab';
 
 interface SM2BadgeProps {
   status: SM2Status;

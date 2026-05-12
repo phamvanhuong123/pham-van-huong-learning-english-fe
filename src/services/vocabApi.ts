@@ -7,7 +7,7 @@ import type {
   ReviewResult,
   SM2Rating,
   CSVVocabRow,
-} from '../types';
+} from '@/types/vocab';
 
 // ─── GET /api/vocab ───────────────────────────────────────────────────────────
 export const fetchVocabs = async (filter: VocabFilter = {}): Promise<GetVocabsResponse> => {

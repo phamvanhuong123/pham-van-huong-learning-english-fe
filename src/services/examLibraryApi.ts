@@ -7,7 +7,7 @@ import type {
   FilterPart,
   FilterDifficulty,
   FilterType,
-} from '../types';
+} from '@/types/exams';
 
 // ─── Exam Library API ──────────────────────────────────────────────────────────
 

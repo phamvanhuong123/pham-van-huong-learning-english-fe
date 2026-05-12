@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { fetchResults } from '../api/examLibraryApi';
-import type { FilterPart, ExamResult } from '../types';
+import { fetchResults } from '@/services/examLibraryApi';
+import type { FilterPart, ExamResult } from '@/types/exams';
 import { ScoreLineChart } from '../components/ScoreLineChart';
 import { ExamHistoryTable } from '../components/ExamHistoryTable';
 import { CompareResultDialog } from '../components/CompareResultDialog';
@@ -29,18 +29,15 @@ export default function ExamHistoryPage() {
   const part = (searchParams.get('part') ?? 'ALL') as FilterPart;
   const page = Number(searchParams.get('page') ?? '1');
 
-  // ─── Selection state (max 2) ────────────────────────────────────────────────
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [compareIds, setCompareIds] = useState<[string, string] | null>(null);
 
-  // ─── Data fetching ──────────────────────────────────────────────────────────
   const { data, isLoading } = useQuery({
     queryKey: ['results', { part, page }],
     queryFn: () => fetchResults({ part, page, limit: 10 }),
     staleTime: 2 * 60 * 1000,
   });
 
-  // Fetch ALL results for chart (without pagination)
   const { data: chartData } = useQuery({
     queryKey: ['results-chart', { part }],
     queryFn: () => fetchResults({ part, limit: 100 }),

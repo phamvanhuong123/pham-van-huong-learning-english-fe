@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { SM2Badge } from './SM2Badge';
-import type { Vocab } from '../types';
+import type { Vocab } from '@/types/vocab';
 
 interface VocabTableRowProps {
   vocab: Vocab;

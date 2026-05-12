@@ -1,5 +1,5 @@
 import api from '@/lib/axios';
-import type { ProfileData, ProfileFormData } from '../types';
+import type { ProfileData, ProfileFormData } from '@/types/profile';
 
 // ─── GET /api/profile ─────────────────────────────────────────────────────────
 export const fetchProfile = async (): Promise<ProfileData> => {

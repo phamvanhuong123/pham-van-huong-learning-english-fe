@@ -1,30 +1,30 @@
 import { useState, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { LogOut, Settings, User, Shield, ShoppingBag } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/modules/auth/store/useAuthStore';
-import { fetchProfile, updateProfile, uploadAvatar } from '../api/profileApi';
+import { fetchProfile, updateProfile, uploadAvatar } from '@/services/profileApi';
 import { AvatarUploader } from './AvatarUploader';
 import { ProfileForm } from './ProfileForm';
 import { VIPStatusCard } from './VIPStatusCard';
 import { ExamCountdown } from './ExamCountdown';
-import type { ProfileFormData } from '../types';
+import type { ProfileFormData } from '@/types/profile';
+import { useLogout } from '@/hooks/useLogout';
 
 function ProfileSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col items-center gap-3">
-        <Skeleton className="w-24 h-24 rounded-full" />
-        <Skeleton className="h-4 w-40" />
-      </div>
-      <Skeleton className="h-20 rounded-xl" />
-      <div className="space-y-4">
-        <Skeleton className="h-10 rounded-lg" />
-        <Skeleton className="h-10 rounded-lg" />
-        <Skeleton className="h-10 rounded-lg" />
-        <Skeleton className="h-12 rounded-lg" />
-      </div>
-      <Skeleton className="h-32 rounded-xl" />
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <aside className="lg:col-span-3 space-y-6">
+        <Skeleton className="h-48 rounded-2xl" />
+        <Skeleton className="h-64 rounded-2xl" />
+      </aside>
+      <main className="lg:col-span-9 rounded-2xl border border-border bg-card shadow-sm overflow-hidden p-8 space-y-8">
+        <Skeleton className="h-10 w-1/3" />
+        <Skeleton className="h-[400px] w-full" />
+      </main>
     </div>
   );
 }
@@ -33,26 +33,23 @@ export function ProfileContainer() {
   const queryClient = useQueryClient();
   const authUser = useAuthStore((s) => s.user);
   const setAuth = useAuthStore((s) => s.setAuth);
+  const { handleLogout, isLoggingOut } = useLogout();
 
-  // Optimistic avatar state
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const previousAvatarUrl = useRef<string | null>(null);
 
-  // ── Fetch profile ─────────────────────────────────────────────────────────
   const { data: profile, isLoading, isError } = useQuery({
     queryKey: ['profile'],
     queryFn: fetchProfile,
     staleTime: 5 * 60 * 1000,
   });
 
-  // ── Update profile mutation ────────────────────────────────────────────────
   const { mutate: doUpdateProfile, isPending: isSavingProfile } = useMutation({
     mutationFn: (data: Partial<ProfileFormData>) => updateProfile(data),
     onSuccess: (updated) => {
       toast.success('Đã lưu thông tin thành công!');
       void queryClient.invalidateQueries({ queryKey: ['profile'] });
       void queryClient.invalidateQueries({ queryKey: ['profile', 'mini'] });
-      // Update auth store name if changed
       if (authUser && updated.name !== authUser.name) {
         setAuth({ ...authUser, name: updated.name }, useAuthStore.getState().accessToken ?? '');
       }
@@ -63,49 +60,37 @@ export function ProfileContainer() {
     },
   });
 
-  // ── Upload avatar mutation ─────────────────────────────────────────────────
   const { mutate: doUploadAvatar, isPending: isUploadingAvatar } = useMutation({
     mutationFn: (blob: Blob) => uploadAvatar(blob),
     onSuccess: (result) => {
       toast.success('Đã cập nhật ảnh đại diện!');
-      setAvatarPreview(null); // clear local preview; real URL from server
+      setAvatarPreview(null);
       void queryClient.invalidateQueries({ queryKey: ['profile'] });
-      // Update auth store avatarUrl
       if (authUser) {
-        setAuth(
-          { ...authUser, avatarUrl: result.avatarUrl },
-          useAuthStore.getState().accessToken ?? ''
-        );
+        setAuth({ ...authUser, avatarUrl: result.avatarUrl }, useAuthStore.getState().accessToken ?? '');
       }
     },
     onError: () => {
       toast.error('Upload ảnh thất bại. Ảnh cũ được giữ nguyên.');
-      // Revert optimistic preview
       setAvatarPreview(null);
     },
   });
 
-  // ── Avatar crop complete handler ───────────────────────────────────────────
   const handleCropComplete = useCallback(
     (blob: Blob, localPreview: string) => {
-      // Save current URL for potential revert
       previousAvatarUrl.current = profile?.avatarUrl ?? null;
-      // Optimistic update
       setAvatarPreview(localPreview);
-      // Fire upload
       doUploadAvatar(blob);
     },
     [doUploadAvatar, profile?.avatarUrl]
   );
 
-  // ── Form save handler ──────────────────────────────────────────────────────
   const handleFormSave = useCallback(
     (data: ProfileFormData) => {
       const payload: Partial<ProfileFormData> = {};
       if (data.name !== profile?.name) payload.name = data.name;
       if (data.targetScore !== profile?.targetScore) payload.targetScore = data.targetScore;
 
-      // Normalize examDate: convert YYYY-MM-DD → ISO string for backend
       const normalizedExamDate = data.examDate ? `${data.examDate}T00:00:00.000Z` : null;
       const profileExamDate = profile?.examDate ? profile.examDate.split('T')[0] : null;
       if (data.examDate !== profileExamDate) payload.examDate = normalizedExamDate;
@@ -116,7 +101,6 @@ export function ProfileContainer() {
     [doUpdateProfile, profile]
   );
 
-  // ── Loading / error states ─────────────────────────────────────────────────
   if (isLoading) return <ProfileSkeleton />;
 
   if (isError || !profile) {
@@ -129,59 +113,89 @@ export function ProfileContainer() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* ── Avatar ── */}
-      <div className="flex flex-col items-center py-2">
-        <AvatarUploader
-          currentAvatarUrl={profile.avatarUrl}
-          previewUrl={avatarPreview}
-          isUploading={isUploadingAvatar}
-          onCropComplete={handleCropComplete}
-        />
-      </div>
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* ── SIDEBAR (Bên trái) ── */}
+      <aside className="lg:col-span-3 space-y-6">
+        {/* Profile Summary Card */}
+        <div className="rounded-2xl border border-border bg-card p-6 flex flex-col items-center text-center shadow-sm">
+          <img 
+            src={profile.avatarUrl || '/default-avatar.png'} 
+            className="w-20 h-20 rounded-full border-4 border-background object-cover shadow-sm mb-4" 
+            alt="Avatar"
+          />
+          <h2 className="font-bold text-lg">{profile.name}</h2>
+          <p className="text-xs text-muted-foreground break-all">{profile.email}</p>
+        </div>
 
-      {/* ── Email (read-only) ── */}
-      <div className="rounded-lg bg-muted/50 border border-border px-4 py-3 flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">Email</span>
-        <span className="text-sm font-medium text-foreground">{profile.email}</span>
-      </div>
-
-      {/* ── Exam countdown ── */}
-      <ExamCountdown examDate={profile.examDate} />
-
-      {/* ── VIP status ── */}
-      <VIPStatusCard role={profile.role} vipExpiresAt={profile.vipExpiresAt} />
-
-      {/* ── Profile form ── */}
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-        <h2 className="text-base font-semibold text-foreground">Thông tin học tập</h2>
-        <ProfileForm
-          profile={profile}
-          isSaving={isSavingProfile}
-          onSave={handleFormSave}
-        />
-      </div>
-
-      {/* ── Account info (read-only) ── */}
-      <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-        <h2 className="text-base font-semibold text-foreground">Thông tin tài khoản</h2>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Ngày tham gia</span>
-            <span className="font-medium text-foreground">
-              {new Intl.DateTimeFormat('vi-VN', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-              }).format(new Date(profile.createdAt))}
-            </span>
+        {/* Menu Navigation */}
+        <nav className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
+          <button className="w-full flex items-center gap-3 px-5 py-3.5 text-sm font-medium bg-primary/10 text-primary border-l-4 border-primary">
+            <Settings className="w-4 h-4" /> Chung
+          </button>
+          <button className="w-full flex items-center gap-3 px-5 py-3.5 text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors">
+            <User className="w-4 h-4" /> Hồ sơ
+          </button>
+          <button className="w-full flex items-center gap-3 px-5 py-3.5 text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors">
+            <Shield className="w-4 h-4" /> Bảo mật
+          </button>
+          <button className="w-full flex items-center gap-3 px-5 py-3.5 text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors">
+            <ShoppingBag className="w-4 h-4" /> Mua hàng
+          </button>
+          <div className="border-t border-border mt-2 p-2">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive gap-3 px-3" 
+              onClick={handleLogout} 
+              disabled={isLoggingOut}
+            >
+              <LogOut className="w-4 h-4" /> Đăng xuất
+            </Button>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Phân quyền</span>
-            <span className="font-medium text-foreground capitalize">{profile.role}</span>
+        </nav>
+      </aside>
+
+      {/* ── MAIN CONTENT (Bên phải) ── */}
+      <main className="lg:col-span-9 rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+        {/* Header Content */}
+        <div className="p-8 border-b border-border bg-muted/20">
+          <h1 className="text-2xl font-bold text-foreground">Cài đặt tài khoản</h1>
+          <p className="text-sm text-muted-foreground mt-1">Quản lý thông tin cá nhân và tùy chọn của bạn</p>
+        </div>
+
+        {/* Body Content: Split into Form and Avatar */}
+        <div className="p-8 grid grid-cols-1 xl:grid-cols-12 gap-12">
+          {/* Left: Form Fields (8/12) */}
+          <div className="xl:col-span-8 space-y-8">
+            {/* VIP & Exam Date (Highlights) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+               <VIPStatusCard role={profile.role} vipExpiresAt={profile.vipExpiresAt} />
+               <ExamCountdown examDate={profile.examDate} />
+            </div>
+
+            <ProfileForm 
+              profile={profile} 
+              isSaving={isSavingProfile} 
+              onSave={handleFormSave} 
+            />
+          </div>
+
+          {/* Right: Avatar Uploader (4/12) */}
+          <div className="xl:col-span-4 flex flex-col items-center">
+            <div className="sticky top-8 space-y-4 text-center">
+              <Label className="text-base font-bold">Ảnh đại diện</Label>
+              <AvatarUploader
+                currentAvatarUrl={profile.avatarUrl}
+                previewUrl={avatarPreview}
+                isUploading={isUploadingAvatar}
+                onCropComplete={handleCropComplete}
+              />
+              <p className="text-sm text-muted-foreground mt-4">
+                Kích thước khuyến nghị: 400x400px.<br/>Hỗ trợ JPG, PNG, WebP.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

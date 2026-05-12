@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { getCroppedImg } from '../utils/cropImage';
-import type { CropPixels } from '../types';
+import type { CropPixels } from '@/types/profile';
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
 
@@ -69,7 +69,7 @@ export function AvatarUploader({
     setCroppedAreaPixels(croppedPixels as CropPixels);
   }, []);
 
-  // ── Confirm crop ─────────────────────────────────────────────────────────────
+
   const handleConfirmCrop = useCallback(async () => {
     if (!imageSrc || !croppedAreaPixels) return;
     setIsCropping(true);

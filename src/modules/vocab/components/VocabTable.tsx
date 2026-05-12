@@ -8,7 +8,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { VocabTableRow } from './VocabTableRow';
-import type { Vocab } from '../types';
+import type { Vocab } from '@/types/vocab';
 
 interface VocabTableProps {
   vocabs: Vocab[];

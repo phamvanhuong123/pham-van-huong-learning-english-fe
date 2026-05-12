@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import type { ExamResult } from '../types';
-import { fetchResultById } from '../api/examLibraryApi';
+import type { ExamResult } from '@/types/exams';
+import { fetchResultById } from '@/services/examLibraryApi';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,

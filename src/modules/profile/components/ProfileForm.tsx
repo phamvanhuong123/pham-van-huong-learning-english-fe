@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { profileSchema, type ProfileFormData, type ProfileData } from '../types';
+import { profileSchema, type ProfileFormData, type ProfileData } from '@/types/profile';
 
 interface ProfileFormProps {
   profile: ProfileData;
@@ -134,20 +134,22 @@ export function ProfileForm({ profile, isSaving, onSave }: ProfileFormProps) {
       </div>
 
       {/* ── Submit ── */}
-      <Button
-        id="profile-save-btn"
-        type="submit"
-        className="w-full font-semibold"
-        disabled={isSaving || !isDirty}
-        aria-label="Lưu thông tin cá nhân"
-      >
-        {isSaving ? (
-          <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-        ) : (
-          <Save className="h-4 w-4 mr-1.5" />
-        )}
-        {isSaving ? 'Đang lưu...' : 'Lưu thông tin'}
-      </Button>
+      <div className="flex justify-end pt-4">
+        <Button
+          id="profile-save-btn"
+          type="submit"
+          className="font-semibold px-8"
+          disabled={isSaving || !isDirty}
+          aria-label="Lưu thông tin cá nhân"
+        >
+          {isSaving ? (
+            <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4 mr-1.5" />
+          )}
+          {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+        </Button>
+      </div>
     </form>
   );
 }

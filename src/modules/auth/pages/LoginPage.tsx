@@ -32,7 +32,7 @@ const LoginPage = () => {
 
   // Nếu đã đăng nhập, redirect về dashboard
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
   const { mutate: loginMutation, isPending, error: mutationError } = useMutation({
@@ -43,7 +43,8 @@ const LoginPage = () => {
     onSuccess: (data) => {
       const { accessToken, user: userData } = data;
       setAuth(userData, accessToken);
-      navigate('/dashboard');
+     
+      navigate( userData.role === "ADMIN" ?'/' : '/admin')
     },
   });
 

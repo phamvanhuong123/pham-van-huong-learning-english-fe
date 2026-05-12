@@ -69,6 +69,9 @@ export interface ExamCardLibraryProps extends ExamCardBaseProps {
   userBestScore?: number; // undefined nếu chưa làm
   userRole: 'STANDARD' | 'VIP' | 'ADMIN';
   onVIPLockClick: (examId: string) => void;
+  onStart?: (examId: string) => void;
+  onRetry?: (examId: string) => void;
+  onViewResult?: (examId: string) => void;
 }
 
 export interface ExamCardHistoryProps extends ExamCardBaseProps {

@@ -1,4 +1,4 @@
-import type { CropPixels, CropResult } from '../types';
+import type { CropPixels, CropResult } from '@/types/profile';
 
 /**
  * Creates an HTMLImageElement from a URL.

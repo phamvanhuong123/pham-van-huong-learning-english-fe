@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { CSVVocabRow } from '../types';
+import type { CSVVocabRow } from '@/types/vocab';
 
 interface ImportCSVDialogProps {
   open: boolean;

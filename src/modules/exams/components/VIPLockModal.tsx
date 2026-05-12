@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Crown, Lock, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { fetchExamPreview } from '../api/examLibraryApi';
+import { fetchExamPreview } from '@/services/examLibraryApi';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,

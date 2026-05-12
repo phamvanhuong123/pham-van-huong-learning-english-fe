@@ -8,7 +8,7 @@ import {
   Legend,
   CartesianGrid,
 } from 'recharts';
-import type { ExamResult } from '../types';
+import type { ExamResult } from '@/types/exams';
 
 // Màu chart đúng theo design-system.md
 const PART_COLORS = {

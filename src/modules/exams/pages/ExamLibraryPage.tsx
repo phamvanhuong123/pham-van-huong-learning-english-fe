@@ -1,8 +1,8 @@
 import { useSearchParams, useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { fetchExams } from '../api/examLibraryApi';
-import type { FilterPart, FilterDifficulty, FilterType } from '../types';
+import { fetchExams } from '@/services/examLibraryApi';
+import type { FilterPart, FilterDifficulty, FilterType } from '@/types/exams';
 import { ExamFilterBar } from '../components/ExamFilterBar';
 import { ExamCard } from '../components/ExamCard';
 import { VIPLockModal } from '../components/VIPLockModal';
@@ -111,6 +111,9 @@ export default function ExamLibraryPage() {
               userBestScore={exam.userBestScore}
               userRole={userRole}
               onVIPLockClick={handleVIPLockClick}
+              onStart={(id) => navigate(`/workspace/${id}`)}
+              onRetry={(id) => navigate(`/workspace/${id}`)}
+              onViewResult={() => navigate(`/history`)}
             />
           ))}
         </div>

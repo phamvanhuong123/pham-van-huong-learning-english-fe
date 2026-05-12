@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { SM2Rating } from '../types';
+import type { SM2Rating } from '@/types/vocab';
 
 interface SM2RatingButtonsProps {
   onRate: (rating: SM2Rating) => void;

@@ -72,7 +72,7 @@ export function VIPStatusCard({ role, vipExpiresAt }: VIPStatusCardProps) {
       <Button
         id="profile-upgrade-vip-btn"
         className="w-full font-semibold"
-        onClick={() => navigate('/upgrade')}
+        onClick={() => navigate('/dashboard/profile?tab=billing')}
         aria-label="Nâng cấp tài khoản VIP"
       >
         <Crown className="h-4 w-4 mr-1.5" />

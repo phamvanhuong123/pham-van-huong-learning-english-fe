@@ -1,4 +1,4 @@
-import type { FilterPart, FilterDifficulty, FilterType } from '../types';
+import type { FilterPart, FilterDifficulty, FilterType } from '@/types/exams';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';

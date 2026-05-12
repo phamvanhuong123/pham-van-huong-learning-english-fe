@@ -22,8 +22,9 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
-    // Xử lý tự động refresh token khi nhận lỗi 401 TOKEN_EXPIRED
-    if (error.response?.status === 401 && error.response?.data?.code === 'TOKEN_EXPIRED' && !originalRequest._retry) {
+    // Xử lý tự động refresh token khi nhận lỗi 401
+    // Bao gồm cả trường hợp TOKEN_EXPIRED lẫn token null/invalid
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
         const res = await axios.post(
@@ -49,12 +50,6 @@ api.interceptors.response.use(
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }
-    }
-    
-    // Nếu lỗi 401 không phải do token expired hoặc đã retry mà vẫn lỗi
-    if (error.response?.status === 401 && !originalRequest._retry) {
-        useAuthStore.getState().clearAuth();
-        window.location.href = '/login';
     }
 
     return Promise.reject(error);

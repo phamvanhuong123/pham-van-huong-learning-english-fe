@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import type { Vocab } from '../types';
+import type { Vocab } from '@/types/vocab';
 
 interface FlashcardViewProps {
   vocab: Vocab;

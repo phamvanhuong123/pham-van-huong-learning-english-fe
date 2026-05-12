@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router';
 import { ClipboardList, ChevronRight, CheckCircle2, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { RecentResultsProps } from '../types';
+import type { RecentResultsProps } from '@/types/dashboard';
 
 const PART_LABEL: Record<string, string> = {
   PART5: 'Part 5',

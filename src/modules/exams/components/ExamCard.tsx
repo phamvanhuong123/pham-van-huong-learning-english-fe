@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Crown, Clock, FileText, Lock, CheckCircle2, Download } from 'lucide-react';
-import type { ExamCardProps } from '../types';
+import type { ExamCardProps } from '@/types/exams';
 import { cn } from '@/lib/utils';
 
 export const ExamCard: React.FC<ExamCardProps> = (props) => {
@@ -34,7 +34,7 @@ export const ExamCard: React.FC<ExamCardProps> = (props) => {
   };
 
   if (variant === 'library') {
-    const { userBestScore, userRole, onVIPLockClick } = props;
+    const { userBestScore, userRole, onVIPLockClick, onStart, onRetry, onViewResult } = props;
     const isLocked = type === 'VIP' && userRole === 'STANDARD';
     const hasAttempted = userBestScore !== undefined;
 
@@ -74,11 +74,11 @@ export const ExamCard: React.FC<ExamCardProps> = (props) => {
               </Button>
             ) : hasAttempted ? (
               <>
-                <Button variant="outline" className="flex-1">Làm lại</Button>
-                <Button variant="default" className="flex-1">Xem kết quả</Button>
+                <Button variant="outline" className="flex-1" onClick={() => onRetry?.(id)}>Làm lại</Button>
+                <Button variant="default" className="flex-1" onClick={() => onViewResult?.(id)}>Xem kết quả</Button>
               </>
             ) : (
-              <Button variant="default" className="w-full">Bắt đầu</Button>
+              <Button variant="default" className="w-full" onClick={() => onStart?.(id)}>Bắt đầu</Button>
             )}
           </div>
         </div>

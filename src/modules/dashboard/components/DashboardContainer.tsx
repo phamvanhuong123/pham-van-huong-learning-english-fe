@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { ArrowRight, Settings, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { fetchDashboard } from '../api/dashboardApi';
+import { fetchDashboard } from '@/services/dashboardApi';
 import { StatsGrid } from './StatsGrid';
 import { VocabDueCard } from './VocabDueCard';
 import { AccuracyByPartSection } from './AccuracyByPartSection';
@@ -55,7 +55,6 @@ interface ProfileData {
   name: string;
 }
 
-// ─── Main container ───────────────────────────────────────────────────────────
 export function DashboardContainer() {
   const navigate = useNavigate();
   const authUser = useAuthStore((s) => s.user);
@@ -102,7 +101,7 @@ export function DashboardContainer() {
       {/* ── Greeting Section ── */}
       <section aria-label="Lời chào">
         <h1 className="text-2xl font-bold text-foreground">
-          {getGreeting()}, <span className="text-primary">{userName}</span>! 👋
+          {getGreeting()}, <span className="text-primary">{userName}</span>! 
         </h1>
 
         {/* Countdown to exam */}
@@ -110,7 +109,7 @@ export function DashboardContainer() {
           <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
             <Calendar className="h-4 w-4" />
             {daysUntil === 0
-              ? 'Hôm nay là ngày thi! Chúc bạn thành công 🎯'
+              ? 'Hôm nay là ngày thi! Chúc bạn thành công '
               : `Còn ${daysUntil} ngày đến kỳ thi`}
           </p>
         )}

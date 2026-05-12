@@ -1,4 +1,4 @@
-import type { ExamResult } from '../types';
+import type { ExamResult } from '@/types/exams';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -98,7 +98,7 @@ export function ExamHistoryTable({ results, selectedIds, onSelect, userRole }: E
                         size="sm"
                         variant="outline"
                         className="h-8 text-xs gap-1"
-                        onClick={() => navigate(`/result/${r.id}`)}
+                        onClick={() => navigate(`/dashboard/results/${r.id}`)}
                       >
                         <Eye className="w-3 h-3" /> Xem lại
                       </Button>

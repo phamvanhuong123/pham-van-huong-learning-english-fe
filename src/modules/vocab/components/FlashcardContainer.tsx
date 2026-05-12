@@ -6,8 +6,8 @@ import { Trophy, RefreshCw, ArrowLeft, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FlashcardView } from './FlashcardView';
 import { SM2RatingButtons } from './SM2RatingButtons';
-import { fetchDueVocabs, reviewVocab } from '../api/vocabApi';
-import type { Vocab, SM2Rating, SessionSummary } from '../types';
+import { fetchDueVocabs, reviewVocab } from '@/services/vocabApi';
+import type { Vocab, SM2Rating, SessionSummary } from '@/types/vocab';
 
 export function FlashcardContainer() {
   const navigate = useNavigate();

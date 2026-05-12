@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router';
 import { BookOpen, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { VocabDueCardProps } from '../types';
+import type { VocabDueCardProps } from '@/types/dashboard';
 
 export function VocabDueCard({ vocabDueToday }: VocabDueCardProps) {
   const navigate = useNavigate();

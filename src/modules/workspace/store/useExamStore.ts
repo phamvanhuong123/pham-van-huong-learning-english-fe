@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { ExamSession } from '../types';
+import type { ExamSession } from '@/types/workspace';
 
 interface ExamStoreState {
   // Store shape: Record<examId, SessionData>

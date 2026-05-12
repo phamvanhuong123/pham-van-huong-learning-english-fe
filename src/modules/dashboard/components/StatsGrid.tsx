@@ -1,6 +1,6 @@
 import { BookOpen, Trophy, BookMarked, Target } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import type { StatsGridProps } from '../types';
+import type { StatsGridProps } from '@/types/dashboard';
 
 interface StatCardProps {
   icon: React.ReactNode;

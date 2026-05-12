@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
-import { addVocab } from '@/modules/workspace/api/vocabApi';
+import { addVocab } from '@/services/workspaceVocabApi';
 import { useClickAway } from '@/hooks/useClickAway';
 
 interface VocabPopupProps {
