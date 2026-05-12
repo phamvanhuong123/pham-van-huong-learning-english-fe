@@ -6,10 +6,30 @@ import type {
   AdminSubscriptionsResponse,
   SubscriptionUpdateBody,
   QuestionCreateBody,
-  QuestionUpdateBody
+  QuestionUpdateBody,
+  AdminExamsResponse,
+  ExamCreateBody,
+  ExamUpdateBody,
+  PassageGroup,
+  PassageGroupCreateBody,
 } from '@/types/admin';
 
 export const adminApi = {
+  getPassageGroups: async (examId: string): Promise<PassageGroup[]> => {
+    const { data } = await api.get<PassageGroup[]>(`/admin/passage-groups/${examId}`);
+    return data;
+  },
+
+  createPassageGroup: async (body: PassageGroupCreateBody): Promise<PassageGroup> => {
+    const { data } = await api.post<PassageGroup>('/admin/passage-groups', body);
+    return data;
+  },
+
+  updatePassageGroup: async (id: string, body: { passages: any[] }): Promise<PassageGroup> => {
+    const { data } = await api.patch<PassageGroup>(`/admin/passage-groups/${id}`, body);
+    return data;
+  },
+
   getDashboard: async (): Promise<AdminDashboardData> => {
     const { data } = await api.get<AdminDashboardData>('/admin/dashboard');
     return data;
@@ -64,8 +84,18 @@ export const adminApi = {
     await api.delete(`/admin/questions/${id}`);
   },
 
-  getExams: async () => {
-    const { data } = await api.get('/admin/exams');
+  getExams: async (): Promise<AdminExamsResponse> => {
+    const { data } = await api.get<AdminExamsResponse>('/admin/exams');
+    return data;
+  },
+
+  createExam: async (body: ExamCreateBody) => {
+    const { data } = await api.post('/admin/exams', body);
+    return data;
+  },
+
+  updateExam: async ({ id, body }: { id: string; body: ExamUpdateBody }) => {
+    const { data } = await api.patch(`/admin/exams/${id}`, body);
     return data;
   },
 };

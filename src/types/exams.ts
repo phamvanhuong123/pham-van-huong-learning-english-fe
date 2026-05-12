@@ -36,6 +36,51 @@ export interface ExamResult {
   answers?: Record<string, string | null>; // questionId -> optionId (dùng cho Compare)
 }
 
+export interface ExamResultOption {
+  id: string;
+  label: string;
+  text: string;
+  isCorrect?: boolean;
+}
+
+export interface QuestionDetail {
+  questionId: string;
+  selectedOptionId: string | null;
+  correctOptionId: string;
+  isCorrect: boolean;
+  explanation: string | null;
+  grammarTopic: string | null;
+  question: {
+    passageGroupId?: string | null;
+    passageGroup?: {
+      id: string;
+      passages: {
+        id: string;
+        content: string;
+        order: number;
+        mediaUrl?: string | null;
+      }[];
+    } | null;
+    questionText: string;
+    options: ExamResultOption[];
+  };
+}
+
+export interface ExamResultDetail {
+  resultId: string;
+  score: number;
+  correctQ: number;
+  totalQ: number;
+  timeTaken: number;
+  submittedAt: string;
+  exam: {
+    id: string;
+    title: string;
+    part: string;
+  };
+  details: QuestionDetail[];
+}
+
 export interface ResultListResponse {
   results: ExamResult[];
   pagination: {
@@ -72,6 +117,7 @@ export interface ExamCardLibraryProps extends ExamCardBaseProps {
   onStart?: (examId: string) => void;
   onRetry?: (examId: string) => void;
   onViewResult?: (examId: string) => void;
+  hasSession?: boolean;
 }
 
 export interface ExamCardHistoryProps extends ExamCardBaseProps {

@@ -44,7 +44,7 @@ export function VocabManagerContainer() {
 
   // ─── Filter state ──────────────────────────────────────────────────────────
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<SM2Status | ''>('');
+  const [statusFilter, setStatusFilter] = useState<SM2Status | 'ALL'>('ALL');
   const [topicFilter, setTopicFilter] = useState('');
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search, 400);
@@ -66,7 +66,7 @@ export function VocabManagerContainer() {
   // ─── Query ─────────────────────────────────────────────────────────────────
   const filter: VocabFilter = {
     search: debouncedSearch || undefined,
-    status: statusFilter || undefined,
+    status: statusFilter === 'ALL' ? undefined : statusFilter,
     topic: topicFilter || undefined,
     page,
     limit: 20,
@@ -219,7 +219,7 @@ export function VocabManagerContainer() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate('/dashboard/vocab/practice')}
+            onClick={() => navigate('/vocab/practice')}
             id="vocab-practice-btn"
             className="border-accent text-accent hover:bg-accent/5"
           >
@@ -295,7 +295,7 @@ export function VocabManagerContainer() {
         <Select
           value={statusFilter}
           onValueChange={(v) => {
-            setStatusFilter(v as SM2Status | '');
+            setStatusFilter(v as SM2Status | 'ALL');
             setPage(1);
           }}
         >
@@ -304,7 +304,7 @@ export function VocabManagerContainer() {
             <SelectValue placeholder="Trạng thái" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Tất cả</SelectItem>
+            <SelectItem value="ALL">Tất cả</SelectItem>
             <SelectItem value="NEW">New</SelectItem>
             <SelectItem value="LEARNING">Learning</SelectItem>
             <SelectItem value="REVIEW">Review</SelectItem>

@@ -29,10 +29,20 @@ export function QuestionPreview({ question }: QuestionPreviewProps) {
           </div>
         </div>
 
-        {/* Passage nếu có */}
-        {question.passage && (
-          <div className="bg-muted/30 p-4 rounded-lg border border-border/50 text-sm leading-relaxed whitespace-pre-wrap">
-            {question.passage}
+        {/* Passage Groups nếu có */}
+        {question.passageGroup && question.passageGroup.passages && (
+          <div className="space-y-4">
+            {question.passageGroup.passages.map((p: any) => (
+              <div key={p.id} className="bg-muted/30 p-4 rounded-lg border border-border/50 text-sm leading-relaxed whitespace-pre-wrap border-l-4 border-primary/30">
+                <div className="text-[10px] font-bold text-primary mb-1 uppercase tracking-wider">
+                  Đoạn văn {question.passageGroup.passages.length > 1 ? p.order : ''}
+                </div>
+                {p.content}
+                {p.mediaUrl && (
+                  <img src={p.mediaUrl} alt="Passage" className="mt-2 rounded max-w-full h-auto border" />
+                )}
+              </div>
+            ))}
           </div>
         )}
 

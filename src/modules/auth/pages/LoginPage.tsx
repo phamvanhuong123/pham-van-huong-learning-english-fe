@@ -30,9 +30,9 @@ const LoginPage = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  // Nếu đã đăng nhập, redirect về dashboard
+  // Nếu đã đăng nhập, redirect 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/'} replace />;
   }
 
   const { mutate: loginMutation, isPending, error: mutationError } = useMutation({
@@ -43,8 +43,8 @@ const LoginPage = () => {
     onSuccess: (data) => {
       const { accessToken, user: userData } = data;
       setAuth(userData, accessToken);
-     
-      navigate( userData.role === "ADMIN" ?'/' : '/admin')
+      console.log(userData)
+      navigate(userData.role === "ADMIN" ? '/admin' : '/')
     },
   });
 

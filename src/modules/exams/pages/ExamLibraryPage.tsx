@@ -10,25 +10,22 @@ import { ExamLibraryEmptyState } from '../components/ExamLibraryEmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-
-// Mock user role — thực tế lấy từ authStore
+import { useExamStore } from '@/modules/workspace/store/useExamStore';
 const useUserRole = () => ({ role: 'STANDARD' as 'STANDARD' | 'VIP' | 'ADMIN' });
-
 export default function ExamLibraryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { role: userRole } = useUserRole();
+  const sessions = useExamStore((state) => state.sessions);
 
-  // ─── Filter state synced from URL ──────────────────────────────────────────
+
   const part = (searchParams.get('part') ?? 'ALL') as FilterPart;
   const difficulty = (searchParams.get('difficulty') ?? 'ALL') as FilterDifficulty;
   const type = (searchParams.get('type') ?? 'ALL') as FilterType;
   const page = Number(searchParams.get('page') ?? '1');
 
-  // ─── VIP Modal state ────────────────────────────────────────────────────────
   const [lockedExamId, setLockedExamId] = useState<string | null>(null);
-
-  // ─── Data fetching ──────────────────────────────────────────────────────────
+``
   const { data, isLoading } = useQuery({
     queryKey: ['exams', { part, difficulty, type, page }],
     queryFn: () => fetchExams({ part, difficulty, type, page, limit: 12 }),
@@ -110,9 +107,13 @@ export default function ExamLibraryPage() {
               duration={exam.duration}
               userBestScore={exam.userBestScore}
               userRole={userRole}
+              hasSession={!!sessions[exam.id]}
               onVIPLockClick={handleVIPLockClick}
               onStart={(id) => navigate(`/workspace/${id}`)}
-              onRetry={(id) => navigate(`/workspace/${id}`)}
+              onRetry={(id) => {
+                useExamStore.getState().clearSession(id);
+                navigate(`/workspace/${id}`);
+              }}
               onViewResult={() => navigate(`/history`)}
             />
           ))}

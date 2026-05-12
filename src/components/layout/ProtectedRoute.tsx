@@ -18,7 +18,7 @@ const ProtectedRoute = ({ requiredRole }: ProtectedRouteProps) => {
     const requiredRoleValue = roleHierarchy[requiredRole] || 0;
 
     if (userRoleValue < requiredRoleValue) {
-      return <Navigate to="/dashboard" replace />;
+      return <Navigate to="/" replace />;
     }
   }
 

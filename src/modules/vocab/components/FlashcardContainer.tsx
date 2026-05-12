@@ -163,7 +163,7 @@ export function FlashcardContainer() {
           <Button 
             variant="outline" 
             className="flex-1 h-12"
-            onClick={() => navigate('/dashboard/vocab')}
+            onClick={() => navigate('/vocab')}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Về Vocab Manager
@@ -187,7 +187,7 @@ export function FlashcardContainer() {
         <div className="text-6xl mb-4">🎉</div>
         <h2 className="text-2xl font-bold text-foreground mb-2">Tuyệt vời!</h2>
         <p className="text-muted-foreground mb-6">Bạn đã hoàn thành toàn bộ mục tiêu ôn tập hôm nay.</p>
-        <Button onClick={() => navigate('/dashboard/vocab')}>
+        <Button onClick={() => navigate('/vocab')}>
           Về trang quản lý
         </Button>
       </div>
@@ -202,7 +202,7 @@ export function FlashcardContainer() {
         <Button 
           variant="ghost" 
           size="sm" 
-          onClick={() => navigate('/dashboard/vocab')}
+          onClick={() => navigate('/vocab')}
           className="text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />

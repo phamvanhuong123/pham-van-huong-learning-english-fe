@@ -9,8 +9,6 @@ import {
   CartesianGrid,
 } from 'recharts';
 import type { ExamResult } from '@/types/exams';
-
-// Màu chart đúng theo design-system.md
 const PART_COLORS = {
   PART5: '#2563EB',
   PART6: '#0D9488',

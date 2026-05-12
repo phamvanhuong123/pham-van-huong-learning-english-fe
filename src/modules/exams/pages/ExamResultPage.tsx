@@ -4,43 +4,10 @@ import { ArrowLeft, CheckCircle2, XCircle, Clock, Target, BookOpen } from 'lucid
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import api from '@/lib/axios';
+import { fetchResultById } from '@/services/examLibraryApi';
+import type { ExamResultDetail } from '@/types/exams';
+import { useExamStore } from '@/modules/workspace/store/useExamStore';
 
-interface Option {
-  id: string;
-  label: string;
-  text: string;
-  isCorrect?: boolean;
-}
-
-interface QuestionDetail {
-  questionId: string;
-  selectedOptionId: string | null;
-  correctOptionId: string;
-  isCorrect: boolean;
-  explanation: string | null;
-  grammarTopic: string | null;
-  question: {
-    passage?: string | null;
-    questionText: string;
-    options: Option[];
-  };
-}
-
-interface ExamResultData {
-  resultId: string;
-  score: number;
-  correctQ: number;
-  totalQ: number;
-  timeTaken: number;
-  submittedAt: string;
-  exam: {
-    id: string;
-    title: string;
-    part: string;
-  };
-  details: QuestionDetail[];
-}
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -70,12 +37,9 @@ export default function ExamResultPage() {
   const { resultId } = useParams<{ resultId: string }>();
   const navigate = useNavigate();
 
-  const { data, isLoading, isError } = useQuery<ExamResultData>({
+  const { data, isLoading, isError } = useQuery<ExamResultDetail>({
     queryKey: ['exam-result', resultId],
-    queryFn: async () => {
-      const { data } = await api.get(`/results/${resultId}`);
-      return data;
-    },
+    queryFn: () => fetchResultById(resultId!),
     enabled: !!resultId,
   });
 
@@ -90,7 +54,7 @@ export default function ExamResultPage() {
           <Button
             variant="outline"
             className="mt-4"
-            onClick={() => navigate('/dashboard/history')}
+            onClick={() => navigate('/history')}
           >
             <ArrowLeft className="h-4 w-4 mr-1.5" />
             Quay lại lịch sử
@@ -102,7 +66,7 @@ export default function ExamResultPage() {
 
   const accuracyPct = Math.round((data.correctQ / data.totalQ) * 100);
   const isGood = accuracyPct >= 70;
-
+  console.log(data)
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">
       {/* Overview Section */}
@@ -113,7 +77,7 @@ export default function ExamResultPage() {
             variant="ghost"
             size="icon"
             className="h-9 w-9"
-            onClick={() => navigate('/dashboard/history')}
+            onClick={() => navigate('/history')}
             aria-label="Quay lại"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -136,7 +100,7 @@ export default function ExamResultPage() {
             </span>
           </div>
           <p className="text-lg font-semibold text-foreground">
-            {isGood ? '🎉 Kết quả tốt!' : '💪 Hãy cố gắng thêm!'}
+            {isGood ? ' Kết quả tốt!' : ' Hãy cố gắng thêm!'}
           </p>
           <div className="flex items-center justify-center gap-1">
             {isGood ? (
@@ -201,6 +165,16 @@ export default function ExamResultPage() {
           <Button
             variant="outline"
             className="flex-1"
+            onClick={() => {
+              useExamStore.getState().clearSession(data.exam.id);
+              navigate(`/workspace/${data.exam.id}`);
+            }}
+          >
+            Làm lại bài
+          </Button>
+          <Button
+            variant="outline"
+            className="flex-1"
             onClick={() => navigate('/history')}
           >
             Xem lịch sử
@@ -224,30 +198,65 @@ export default function ExamResultPage() {
             Xem giải thích chi tiết
           </h2>
           
-          <div className="space-y-8">
-            {data.details.map((detail, index) => {
-              const q = detail.question;
-              return (
-                <div key={detail.questionId} className="bg-card border border-border rounded-xl p-6 shadow-sm">
-                  <div className="flex flex-col gap-4">
-                    {/* Question Title */}
-                    <div className="flex gap-3">
-                      <span className={cn(
-                        "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-white",
-                        detail.isCorrect ? "bg-success" : "bg-destructive"
-                      )}>
-                        {index + 1}
-                      </span>
-                      <p className="text-lg font-medium pt-1 text-foreground">{q.questionText}</p>
-                    </div>
+          <div className="space-y-12">
+            {(() => {
+              // Logic gộp nhóm chi tiết kết quả theo passageGroupId
+              const groups: { passageGroup: any; details: typeof data.details }[] = [];
+              data.details.forEach((d) => {
+                const q = d.question as any;
+                const lastGroup = groups[groups.length - 1];
+                if (lastGroup && q.passageGroupId && lastGroup.passageGroup?.id === q.passageGroupId) {
+                  lastGroup.details.push(d);
+                } else {
+                  groups.push({ passageGroup: q.passageGroup || null, details: [d] });
+                }
+              });
 
-                    <div className="flex-1 space-y-4 ml-11">
-                      {/* Passage */}
-                      {q.passage && (
-                        <div className="p-4 bg-muted/50 rounded-lg text-base leading-relaxed whitespace-pre-wrap border-l-4 border-primary/30">
-                          {q.passage}
-                        </div>
-                      )}
+              return groups.map((group, gIdx) => (
+                <div key={gIdx} className="space-y-6">
+                  {/* Hiển thị các đoạn văn trong nhóm nếu có */}
+                  {group.passageGroup && group.passageGroup.passages && (
+                    <div className="space-y-4">
+                      {group.passageGroup.passages
+                        .sort((a: any, b: any) => a.order - b.order)
+                        .map((p: any) => (
+                          <div key={p.id} className="bg-muted/30 border border-border rounded-xl p-6 shadow-sm border-l-4 border-primary/50">
+                            <div className="text-sm font-bold text-primary mb-3 uppercase tracking-wider flex items-center gap-2">
+                              <BookOpen className="h-4 w-4" /> Đoạn văn {group.passageGroup.passages.length > 1 ? p.order : ''}
+                            </div>
+                            <div className="text-base leading-relaxed whitespace-pre-wrap font-serif text-foreground/90">
+                              {p.content}
+                            </div>
+                            {p.mediaUrl && (
+                              <img src={p.mediaUrl} alt="Passage illustration" className="mt-4 rounded-lg max-w-full h-auto border" />
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+
+                  {/* Danh sách các câu hỏi thuộc nhóm này */}
+                  <div className="space-y-6">
+                    {group.details.map((detail) => {
+                      const q = detail.question;
+                      // Tìm vị trí thật của câu hỏi trong mảng gốc để hiển thị số thứ tự đúng
+                      const originalIndex = data.details.findIndex(d => d.questionId === detail.questionId);
+                      
+                      return (
+                        <div key={detail.questionId} className="bg-card border border-border rounded-xl p-6 shadow-sm">
+                          <div className="flex flex-col gap-4">
+                            {/* Question Title */}
+                            <div className="flex gap-3">
+                              <span className={cn(
+                                "shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-white",
+                                detail.isCorrect ? "bg-success" : "bg-destructive"
+                              )}>
+                                {originalIndex + 1}
+                              </span>
+                              <p className="text-lg font-medium pt-1 text-foreground">{q.questionText}</p>
+                            </div>
+
+                            <div className="flex-1 space-y-4 ml-11">
                       
                       {/* Options */}
                       <div className="grid grid-cols-1 gap-3">
@@ -259,13 +268,13 @@ export default function ExamResultPage() {
                           let labelClass = "bg-muted text-muted-foreground border-border";
                           
                           if (isSelected && isCorrectOpt) {
-                            bgClass = "bg-success/10 border-success text-success-foreground shadow-sm";
+                            bgClass = "bg-success/10 border-success text-success shadow-sm";
                             labelClass = "bg-success text-white border-success";
                           } else if (isSelected && !isCorrectOpt) {
-                            bgClass = "bg-destructive/10 border-destructive text-destructive-foreground shadow-sm";
+                            bgClass = "bg-destructive/10 border-destructive text-destructive shadow-sm";
                             labelClass = "bg-destructive text-white border-destructive";
                           } else if (!isSelected && isCorrectOpt) {
-                            bgClass = "bg-success/5 border-success/50 text-success-foreground shadow-sm ring-1 ring-success/30";
+                            bgClass = "bg-success/5 border-success/50 text-success shadow-sm ring-1 ring-success/30";
                             labelClass = "bg-success text-white border-success";
                           }
 
@@ -278,7 +287,7 @@ export default function ExamResultPage() {
                               )}
                             >
                               <span className={cn(
-                                "font-bold mr-3 flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center border",
+                                "font-bold mr-3 shrink-0 w-7 h-7 rounded-full flex items-center justify-center border",
                                 labelClass
                               )}>
                                 {opt.label}
@@ -313,11 +322,15 @@ export default function ExamResultPage() {
                           )}
                         </div>
                       )}
-                    </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              );
-            })}
+              ));
+            })()}
           </div>
         </div>
       )}

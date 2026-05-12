@@ -34,7 +34,7 @@ export const ExamCard: React.FC<ExamCardProps> = (props) => {
   };
 
   if (variant === 'library') {
-    const { userBestScore, userRole, onVIPLockClick, onStart, onRetry, onViewResult } = props;
+    const { userBestScore, userRole, onVIPLockClick, onStart, onRetry, onViewResult, hasSession } = props;
     const isLocked = type === 'VIP' && userRole === 'STANDARD';
     const hasAttempted = userBestScore !== undefined;
 
@@ -72,13 +72,22 @@ export const ExamCard: React.FC<ExamCardProps> = (props) => {
               >
                 <Lock className="w-4 h-4 mr-2" /> VIP Only
               </Button>
-            ) : hasAttempted ? (
-              <>
-                <Button variant="outline" className="flex-1" onClick={() => onRetry?.(id)}>Làm lại</Button>
-                <Button variant="default" className="flex-1" onClick={() => onViewResult?.(id)}>Xem kết quả</Button>
-              </>
             ) : (
-              <Button variant="default" className="w-full" onClick={() => onStart?.(id)}>Bắt đầu</Button>
+              <>
+                {hasAttempted ? (
+                  <>
+                    <Button variant="outline" className="flex-1" onClick={() => onRetry?.(id)}>Làm lại</Button>
+                    <Button variant="default" className="flex-1" onClick={() => onViewResult?.(id)}>Kết quả</Button>
+                  </>
+                ) : hasSession ? (
+                  <>
+                    <Button variant="outline" className="flex-1" onClick={() => onRetry?.(id)}>Làm lại</Button>
+                    <Button variant="default" className="flex-1" onClick={() => onStart?.(id)}>Tiếp tục</Button>
+                  </>
+                ) : (
+                  <Button variant="default" className="w-full" onClick={() => onStart?.(id)}>Bắt đầu</Button>
+                )}
+              </>
             )}
           </div>
         </div>

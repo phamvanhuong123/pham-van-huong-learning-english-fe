@@ -5,6 +5,7 @@ import AdminDashboardPage from '@/modules/admin/pages/AdminDashboardPage';
 import UserManagerPage from '@/modules/admin/pages/UserManagerPage';
 import SubscriptionManagerPage from '@/modules/admin/pages/SubscriptionManagerPage';
 import QuestionBankPage from '@/modules/admin/pages/QuestionBankPage';
+import ExamManagementPage from '@/modules/admin/pages/ExamManagementPage';
 import AdminNotificationsPage from '@/modules/admin/pages/AdminNotificationsPage';
 
 /**
@@ -24,6 +25,7 @@ function AdminRoutes() {
         <Route path="users" element={<UserManagerPage />} />
         <Route path="subscriptions" element={<SubscriptionManagerPage />} />
         <Route path="questions" element={<QuestionBankPage />} />
+        <Route path="exams" element={<ExamManagementPage />} />
         <Route path="notifications" element={<AdminNotificationsPage />} />
       </Route>
     </Route>

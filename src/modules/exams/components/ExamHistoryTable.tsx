@@ -68,7 +68,7 @@ export function ExamHistoryTable({ results, selectedIds, onSelect, userRole }: E
                       aria-label={`Chọn kết quả ${r.examTitle}`}
                     />
                   </td>
-                  <td className="px-4 py-3 max-w-[200px]">
+                  <td className="px-4 py-3 max-w-50">
                     <span className="line-clamp-1 font-medium text-foreground">{r.examTitle}</span>
                   </td>
                   <td className="px-4 py-3">
@@ -98,7 +98,7 @@ export function ExamHistoryTable({ results, selectedIds, onSelect, userRole }: E
                         size="sm"
                         variant="outline"
                         className="h-8 text-xs gap-1"
-                        onClick={() => navigate(`/dashboard/results/${r.id}`)}
+                        onClick={() => navigate(`/results/${r.id}`)}
                       >
                         <Eye className="w-3 h-3" /> Xem lại
                       </Button>

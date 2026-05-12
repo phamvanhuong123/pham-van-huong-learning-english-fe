@@ -42,7 +42,7 @@ export function RecentResults({ recentResults }: RecentResultsProps) {
               key={result.id}
               id={`recent-result-${result.id}`}
               className="w-full text-left rounded-lg border border-border bg-background hover:bg-muted/50 transition-colors duration-150 p-4 flex items-center justify-between gap-4 group"
-              onClick={() => navigate(`/dashboard/results/${result.id}`)}
+              onClick={() => navigate(`/results/${result.id}`)}
               aria-label={`Xem chi tiết kết quả: ${result.exam.title}`}
             >
               <div className="min-w-0 flex-1">

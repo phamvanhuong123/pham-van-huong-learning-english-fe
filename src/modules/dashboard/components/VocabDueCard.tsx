@@ -31,7 +31,7 @@ export function VocabDueCard({ vocabDueToday }: VocabDueCardProps) {
       <Button
         id="vocab-due-review-btn"
         className="shrink-0 bg-warning text-warning-foreground hover:bg-warning/90 font-semibold"
-        onClick={() => navigate('/dashboard/vocab/practice')}
+        onClick={() => navigate('/vocab/practice')}
         aria-label="Bắt đầu ôn tập từ vựng"
       >
         Ôn ngay

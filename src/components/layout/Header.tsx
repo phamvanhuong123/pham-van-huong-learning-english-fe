@@ -1,7 +1,7 @@
-import { Link } from 'react-router';
+import { Link, NavLink } from 'react-router';
 import { useAuthStore } from '@/modules/auth/store/useAuthStore';
 import { NotificationBell } from './NotificationBell';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, LayoutDashboard, BookOpen, History, Library, BarChart3 } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -9,23 +9,53 @@ import {
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { useLogout } from '@/hooks/useLogout';
+import { cn } from '@/lib/utils';
 
 export function Header() {
   const user = useAuthStore((s) => s.user);
   const { handleLogout, isLoggingOut } = useLogout();
 
+  const navItems = [
+    { label: 'Dashboard', to: '/', icon: LayoutDashboard },
+    { label: 'Luyện đề', to: '/exams', icon: Library },
+    { label: 'Lịch sử', to: '/history', icon: History },
+    { label: 'Từ vựng', to: '/vocab', icon: BookOpen },
+    { label: 'Phân tích', to: '/analytics', icon: BarChart3 },
+  ];
+
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-2" replace={true}>
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-sm">
               <span className="text-white font-bold text-lg">T</span>
             </div>
-            <span className="text-xl font-bold tracking-tight hidden sm:inline-block">
+            <span className="text-xl font-bold tracking-tight hidden lg:inline-block">
               TOEIC Master
             </span>
           </Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-1">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    isActive 
+                      ? "bg-primary/10 text-primary" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )
+                }
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
         </div>
 
         <div className="flex items-center gap-2">

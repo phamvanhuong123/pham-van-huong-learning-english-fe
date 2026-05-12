@@ -119,7 +119,7 @@ export function DashboardContainer() {
           <button
             id="dashboard-set-goal-btn"
             className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
-            onClick={() => navigate('/dashboard/profile')}
+            onClick={() => navigate('/profile')}
             aria-label="Đặt mục tiêu điểm và ngày thi"
           >
             <Settings className="h-3.5 w-3.5" />

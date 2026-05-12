@@ -25,7 +25,7 @@ export function QuestionBankContainer() {
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
-  const [limit] = useState(20);
+  const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   
@@ -70,7 +70,10 @@ export function QuestionBankContainer() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const examsList = examsData?.exams || examsData || [];
+  // Truyền thêm `part` để QuestionFormDialog biết ẩn/hiện passage
+  const examsList = (Array.isArray(examsData) ? examsData : (examsData?.exams || [])).map(
+    (e: any) => ({ id: e.id, title: e.title, part: e.part }),
+  );
 
   const saveMutation = useMutation({
     mutationFn: async (data: QuestionCreateBody) => {
@@ -82,8 +85,7 @@ export function QuestionBankContainer() {
     onSuccess: () => {
       toast.success(editingQuestion ? 'Cập nhật thành công' : 'Tạo mới thành công');
       queryClient.invalidateQueries({ queryKey: ['admin', 'questions'] });
-      setIsFormOpen(false);
-      setEditingQuestion(null);
+      // Việc đóng form do onSave callback trong JSX quyết định (hỗ trợ isContinue)
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Có lỗi xảy ra');
@@ -105,34 +107,46 @@ export function QuestionBankContainer() {
 
   const importMutation = useMutation({
     mutationFn: async (items: QuestionCreateBody[]) => {
-      // Vì API không có bulkCreate, ta gọi loop hoặc giả sử backend support 
-      // Nhưng an toàn nhất là Promise.all nếu số lượng nhỏ. 
-      // Ở đây ta gọi createQuestion trong loop.
       let success = 0;
       let fail = 0;
-      for (const item of items) {
+      let errorMessages: string[] = [];
+
+      for (const [index, item] of items.entries()) {
         try {
           await adminApi.createQuestion(item);
           success++;
-        } catch (e) {
+        } catch (e: any) {
           fail++;
+          const msg = e.response?.data?.message || e.message || 'Lỗi không xác định';
+          errorMessages.push(`Câu ${index + 1}: ${msg}`);
         }
       }
-      return { success, fail };
+      return { success, fail, errorMessages };
     },
     onSuccess: (res) => {
-      toast.success(`Đã import thành công ${res.success} câu hỏi. Lỗi ${res.fail} câu.`);
+      if (res.fail > 0) {
+        toast.error(`Import hoàn tất: ${res.success} thành công, ${res.fail} thất bại.`, {
+          description: (
+            <div className="mt-2 max-h-40 overflow-y-auto space-y-1 text-[11px]">
+              {res.errorMessages.map((m, i) => <p key={i} className="text-destructive">• {m}</p>)}
+            </div>
+          ),
+          duration: 10000,
+        });
+      } else {
+        toast.success(`Đã import thành công tất cả ${res.success} câu hỏi.`);
+      }
       queryClient.invalidateQueries({ queryKey: ['admin', 'questions'] });
     },
     onError: () => {
-      toast.error('Có lỗi xảy ra trong quá trình import');
+      toast.error('Lỗi nghiêm trọng trong quá trình import');
     }
   });
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 flex flex-col min-h-0 space-y-6">
       {/* Top Bar Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card p-4 rounded-lg border border-border">
+      <div className="flex-shrink-0 flex flex-col sm:flex-row gap-4 items-center justify-between bg-card p-4 rounded-lg border border-border">
         <div className="flex w-full sm:w-auto items-center gap-3">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -183,30 +197,49 @@ export function QuestionBankContainer() {
         </div>
       </div>
 
-      <QuestionTable
-        questions={questionsData?.questions || questionsData?.data || []}
-        isLoading={isLoading}
-        onEdit={(q) => {
-          setEditingQuestion(q);
-          setIsFormOpen(true);
-        }}
-        onDelete={(q) => setDeletingQuestion(q)}
-      />
+      <div className="flex-1 min-h-0">
+        <QuestionTable
+          questions={questionsData?.questions || questionsData?.data || []}
+          isLoading={isLoading}
+          onEdit={(q) => {
+            setEditingQuestion(q);
+            setIsFormOpen(true);
+          }}
+          onDelete={(q) => setDeletingQuestion(q)}
+        />
+      </div>
 
-      {/* Pagination */}
-      {questionsData?.pagination && questionsData.pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4">
+      {/* Pagination & Limit Selector */}
+      <div className="flex-shrink-0 flex items-center justify-between pt-4 border-t border-border">
+        <div className="flex items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            Hiển thị <span className="font-medium">{questionsData.questions?.length || questionsData.data?.length}</span> trên tổng số{' '}
-            <span className="font-medium">{questionsData.pagination.total}</span> câu
+            Hiển thị <span className="font-medium">{questionsData?.questions?.length || questionsData?.data?.length || 0}</span> trên tổng số{' '}
+            <span className="font-medium">{questionsData?.pagination?.total || 0}</span> câu
           </p>
+          
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Trang trước</Button>
-            <span className="text-sm px-4">{page} / {questionsData.pagination.totalPages}</span>
-            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(questionsData.pagination.totalPages, p + 1))} disabled={page === questionsData.pagination.totalPages}>Trang sau</Button>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">Số hàng:</span>
+            <Select value={limit.toString()} onValueChange={(v) => { setLimit(parseInt(v)); setPage(1); }}>
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue placeholder={limit.toString()} />
+              </SelectTrigger>
+              <SelectContent>
+                {[10, 20, 50, 100].map(v => (
+                  <SelectItem key={v} value={v.toString()}>{v}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
-      )}
+
+        {questionsData?.pagination && questionsData.pagination.totalPages > 1 && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="h-8" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Trang trước</Button>
+            <span className="text-sm px-4 font-medium">{page} / {questionsData.pagination.totalPages}</span>
+            <Button variant="outline" size="sm" className="h-8" onClick={() => setPage(p => Math.min(questionsData.pagination.totalPages, p + 1))} disabled={page === questionsData.pagination.totalPages}>Trang sau</Button>
+          </div>
+        )}
+      </div>
 
       {/* Form Dialog */}
       {isFormOpen && (
@@ -216,8 +249,16 @@ export function QuestionBankContainer() {
             setIsFormOpen(false);
             setEditingQuestion(null);
           }}
-          onSave={async (data) => {
+        onSave={async (data, isContinue) => {
             await saveMutation.mutateAsync(data);
+            // Khi "Lưu & Tiếp tục", form tự reset bên trong nên không cần đóng
+            if (!isContinue) {
+              setIsFormOpen(false);
+              setEditingQuestion(null);
+            } else {
+              // Chỉ reset editing (câu mới không phải edit cũ)
+              setEditingQuestion(null);
+            }
           }}
           initialData={editingQuestion}
           exams={examsList}

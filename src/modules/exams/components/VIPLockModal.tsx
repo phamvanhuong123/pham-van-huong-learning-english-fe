@@ -111,7 +111,7 @@ export function VIPLockModal({ examId, onClose }: VIPLockModalProps) {
             className="gap-2"
             onClick={() => {
               onClose();
-              navigate('/dashboard/profile?tab=billing');
+              navigate('/profile?tab=billing');
             }}
           >
             <Crown className="w-4 h-4" /> Nâng cấp VIP

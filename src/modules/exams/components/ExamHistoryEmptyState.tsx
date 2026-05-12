@@ -19,7 +19,7 @@ export function ExamHistoryEmptyState() {
         id="history-start-first-exam-btn"
         variant="default"
         className="mt-2 gap-2"
-        onClick={() => navigate('/dashboard/exams')}
+        onClick={() => navigate('/exams')}
       >
         Bắt đầu bài thi đầu tiên
       </Button>

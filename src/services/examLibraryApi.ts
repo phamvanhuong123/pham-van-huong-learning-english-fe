@@ -3,7 +3,7 @@ import type {
   ExamListResponse,
   ExamListItem,
   ResultListResponse,
-  ExamResult,
+  ExamResultDetail,
   FilterPart,
   FilterDifficulty,
   FilterType,
@@ -54,7 +54,7 @@ export const fetchResults = async (params: FetchResultsParams): Promise<ResultLi
   return data;
 };
 
-export const fetchResultById = async (resultId: string): Promise<ExamResult> => {
-  const { data } = await api.get<ExamResult>(`/results/${resultId}`);
+export const fetchResultById = async (resultId: string): Promise<ExamResultDetail> => {
+  const { data } = await api.get<ExamResultDetail>(`/results/${resultId}`);
   return data;
 };

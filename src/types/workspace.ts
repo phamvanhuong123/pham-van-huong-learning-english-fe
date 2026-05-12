@@ -7,9 +7,18 @@ export interface Option {
 export interface Question {
   id: string;
   order: number;
-  passage: string | null;
   questionText: string;
   options: Option[];
+  passageGroupId?: string | null;
+  passageGroup?: {
+    id: string;
+    passages: {
+      id: string;
+      content: string;
+      order: number;
+      mediaUrl?: string | null;
+    }[];
+  } | null;
 }
 
 export interface Exam {

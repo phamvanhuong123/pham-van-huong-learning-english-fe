@@ -6,9 +6,11 @@ interface ExamTimerProps {
   duration: number; // phút
   examId: string;
   onTimeUp: () => void;
+  className?: string;
+  hideLabel?: boolean; // Reserved for future use
 }
 
-export const ExamTimer: React.FC<ExamTimerProps> = ({ duration, examId, onTimeUp }) => {
+export const ExamTimer: React.FC<ExamTimerProps> = ({ duration, examId, onTimeUp, className }) => {
   const { sessions, initSession } = useExamStore();
   const [remaining, setRemaining] = useState<number | null>(null);
   
@@ -66,7 +68,8 @@ export const ExamTimer: React.FC<ExamTimerProps> = ({ duration, examId, onTimeUp
       className={cn(
         "font-mono px-3 py-1 rounded-md bg-muted text-foreground transition-all duration-300 min-w-[80px] text-center",
         isWarning && "bg-destructive/10 text-destructive animate-pulse",
-        isCritical && "font-bold text-xl"
+        isCritical && "font-bold text-xl",
+        className
       )}
     >
       {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}

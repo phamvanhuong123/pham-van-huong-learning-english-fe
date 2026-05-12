@@ -11,6 +11,7 @@ import {
   X,
   ShieldCheck,
   LogOut,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
     icon: <CreditCard className="w-4 h-4" />,
     badgeKey: 'pendingSubscriptions',
   },
+  { label: 'Quản lý đề thi', to: '/admin/exams', icon: <FileText className="w-4 h-4" /> },
   { label: 'Ngân hàng câu hỏi', to: '/admin/questions', icon: <BookOpen className="w-4 h-4" /> },
   { label: 'Thông báo', to: '/admin/notifications', icon: <Bell className="w-4 h-4" /> },
 ];
