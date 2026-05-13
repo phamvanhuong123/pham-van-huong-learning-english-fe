@@ -13,16 +13,20 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { notificationApi } from "@/services/notificationApi"
 import { toRelativeTime } from "@/utils/relativeTime"
 import { cn } from "@/lib/utils"
+import { useSocket } from "@/hooks/useSocket"
 
 export function NotificationBell() {
   const queryClient = useQueryClient()
 
-  // Polling mỗi 60 giây — KHÔNG dùng WebSocket
+  // Lắng nghe thông báo realtime để làm mới danh sách
+  useSocket('new_notification', () => {
+    queryClient.invalidateQueries({ queryKey: ["notifications"] })
+  })
   const { data, isLoading } = useQuery({
     queryKey: ["notifications"],
     queryFn: () => notificationApi.getList(1, 10),
-    refetchInterval: 60_000, // 60 giây
-    refetchIntervalInBackground: false, // chỉ poll khi tab active
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false, 
   })
 
   const notifications = data?.notifications ?? []

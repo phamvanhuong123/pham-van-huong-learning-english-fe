@@ -1,5 +1,5 @@
 import api from '@/lib/axios';
-import { SubscriptionStatus } from '@/types/admin';
+import type { SubscriptionStatus } from '@/types/admin';
 
 export interface UserSubscriptionItem {
   id: string;

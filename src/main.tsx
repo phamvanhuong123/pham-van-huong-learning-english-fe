@@ -13,10 +13,14 @@ const queryClient = new QueryClient({
   },
 })
 
+import { SocketProvider } from './providers/SocketProvider'
+
 createRoot(document.getElementById('root')!).render(
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
-      <App />
+      <SocketProvider>
+        <App />
+      </SocketProvider>
     </BrowserRouter>
   </QueryClientProvider>
 )

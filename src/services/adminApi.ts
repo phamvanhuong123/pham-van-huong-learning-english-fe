@@ -107,6 +107,15 @@ export const adminApi = {
     const { data } = await api.post('/admin/notifications/broadcast', body);
     return data;
   },
+
+  getBroadcasts: async (): Promise<any> => {
+    const { data } = await api.get('/admin/notifications/broadcasts');
+    return data;
+  },
+
+  deleteBroadcast: async (id: string): Promise<void> => {
+    await api.delete(`/admin/notifications/broadcasts/${id}`);
+  },
 };
 
 
