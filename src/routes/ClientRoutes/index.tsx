@@ -23,6 +23,7 @@ import ExamLibraryPage from "@/modules/exams/pages/ExamLibraryPage";
 import ExamHistoryPage from "@/modules/exams/pages/ExamHistoryPage";
 import AnalyticsPage from "@/modules/analytics/pages/AnalyticsPage";
 import ExamResultPage from "@/modules/exams/pages/ExamResultPage";
+import PricingPage from "@/modules/subscription/pages/PricingPage";
 import { ExamWorkspacePage } from "@/modules/workspace/ExamWorkspacePage";
 
 function ClientRoutes(){
@@ -37,6 +38,7 @@ function ClientRoutes(){
                 <Route path="history" element={<ExamHistoryPage />} />
                 <Route path="analytics" element={<AnalyticsPage />} />
                 <Route path="results/:resultId" element={<ExamResultPage />} />
+                <Route path="pricing" element={<PricingPage />} />
             </Route>
             <Route path="/workspace/:examId" element={<ExamWorkspacePage />} />
         </>

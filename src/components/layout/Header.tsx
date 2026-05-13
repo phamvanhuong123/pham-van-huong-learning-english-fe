@@ -1,7 +1,7 @@
 import { Link, NavLink } from 'react-router';
 import { useAuthStore } from '@/modules/auth/store/useAuthStore';
 import { NotificationBell } from './NotificationBell';
-import { User, LogOut, LayoutDashboard, BookOpen, History, Library, BarChart3 } from 'lucide-react';
+import { User, LogOut, LayoutDashboard, BookOpen, History, Library, BarChart3, Crown } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -59,6 +59,19 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-2">
+          {user?.role !== 'VIP' && user?.role !== 'ADMIN' && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="hidden lg:flex gap-2 border-primary/30 text-primary hover:bg-primary/5 rounded-full"
+              asChild
+            >
+              <Link to="/pricing">
+                <Crown className="h-4 w-4" />
+                Go VIP
+              </Link>
+            </Button>
+          )}
           <NotificationBell />
           
           <Popover>
@@ -81,6 +94,13 @@ export function Header() {
                 <div className="px-2 py-1.5 text-xs text-muted-foreground">
                   Tài khoản: <span className="font-medium text-foreground">{user?.email}</span>
                 </div>
+                <div className="h-px bg-border my-1" />
+                <Link to="/profile" className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-muted">
+                  <User className="h-4 w-4" /> Hồ sơ
+                </Link>
+                <Link to="/pricing" className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-muted text-primary font-medium">
+                  <Crown className="h-4 w-4" /> Nâng cấp VIP
+                </Link>
                 <div className="h-px bg-border my-1" />
                 <Button variant="ghost" size="sm" className="justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleLogout} disabled={isLoggingOut}>
                   <LogOut className="h-4 w-4" />

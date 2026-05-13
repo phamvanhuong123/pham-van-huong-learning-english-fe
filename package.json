@@ -16,6 +16,7 @@
     "@hugeicons/core-free-icons": "^4.1.1",
     "@hugeicons/react": "^1.1.6",
     "@tailwindcss/vite": "^4.2.4",
+    "@tanstack/react-form": "^1.32.0",
     "@tanstack/react-query": "^5.100.9",
     "@types/papaparse": "^5.5.2",
     "@types/react-easy-crop": "^1.16.0",

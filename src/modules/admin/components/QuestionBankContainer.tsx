@@ -9,16 +9,7 @@ import { ImportJSONDialog } from './ImportJSONDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import type { QuestionCreateBody } from '@/types/admin';
 
 export function QuestionBankContainer() {
@@ -277,29 +268,14 @@ export function QuestionBankContainer() {
       />
 
       {/* Delete Dialog */}
-      <AlertDialog open={!!deletingQuestion} onOpenChange={(open) => !open && setDeletingQuestion(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa câu hỏi này không? Nếu câu hỏi đã được người dùng làm bài, hệ thống sẽ chặn hành động xóa để đảm bảo toàn vẹn dữ liệu.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Hủy</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={(e) => {
-                e.preventDefault();
-                deleteMutation.mutate(deletingQuestion.id);
-              }}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? 'Đang xóa...' : 'Xóa ngay'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmDialog
+        open={!!deletingQuestion}
+        onOpenChange={(open) => !open && setDeletingQuestion(null)}
+        onConfirm={() => deletingQuestion && deleteMutation.mutate(deletingQuestion.id)}
+        isLoading={deleteMutation.isPending}
+        title="Xác nhận xóa câu hỏi?"
+        description="Bạn có chắc chắn muốn xóa câu hỏi này không? Nếu câu hỏi đã được người dùng làm bài, hệ thống sẽ chặn hành động xóa để đảm bảo toàn vẹn dữ liệu."
+      />
     </div>
   );
 }

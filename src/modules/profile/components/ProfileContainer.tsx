@@ -138,8 +138,11 @@ export function ProfileContainer() {
           <button className="w-full flex items-center gap-3 px-5 py-3.5 text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors">
             <Shield className="w-4 h-4" /> Bảo mật
           </button>
-          <button className="w-full flex items-center gap-3 px-5 py-3.5 text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors">
-            <ShoppingBag className="w-4 h-4" /> Mua hàng
+          <button 
+            className="w-full flex items-center gap-3 px-5 py-3.5 text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
+            onClick={() => navigate('/pricing')}
+          >
+            <ShoppingBag className="w-4 h-4" /> Nâng cấp VIP
           </button>
           <div className="border-t border-border mt-2 p-2">
             <Button 

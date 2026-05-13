@@ -22,6 +22,16 @@ export const fetchVocabs = async (filter: VocabFilter = {}): Promise<GetVocabsRe
   const { data } = await api.get<GetVocabsResponse>(`/vocab?${params.toString()}`);
   return data;
 };
+
+export const createVocab = async (payload: {
+  word: string;
+  meaning: string;
+  example?: string;
+  topic?: string;
+}): Promise<Vocab> => {
+  const { data } = await api.post<Vocab>('/vocab', payload);
+  return data;
+};
 export const updateVocab = async (
   vocabId: string,
   payload: { meaning?: string; topic?: string }

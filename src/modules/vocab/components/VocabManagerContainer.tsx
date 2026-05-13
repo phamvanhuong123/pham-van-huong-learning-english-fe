@@ -15,11 +15,13 @@ import {
 import { VocabTable } from './VocabTable';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { ImportCSVDialog } from './ImportCSVDialog';
+import { AddVocabDialog } from './AddVocabDialog';
 import {
   fetchVocabs,
   bulkDeleteVocab,
   updateVocab,
   bulkImportVocab,
+  createVocab,
 } from '@/services/vocabApi';
 import { cn } from '@/lib/utils';
 import type { SM2Status, VocabFilter, CSVVocabRow } from '@/types/vocab';
@@ -59,6 +61,7 @@ export function VocabManagerContainer() {
     ids: string[];
   }>({ open: false, ids: [] });
   const [importDialog, setImportDialog] = useState(false);
+  const [addDialog, setAddDialog] = useState(false);
   const [importResult, setImportResult] = useState<{
     skippedWords: string[];
   } | null>(null);
@@ -165,6 +168,21 @@ export function VocabManagerContainer() {
     },
   });
 
+  // ─── Add vocab ─────────────────────────────────────────────────────────────
+  const { mutate: doAdd, isPending: isAdding } = useMutation({
+    mutationFn: (payload: { word: string; meaning: string; example?: string; topic?: string }) =>
+      createVocab(payload),
+    onSuccess: () => {
+      toast.success('Đã thêm từ vựng mới');
+      setAddDialog(false);
+      void queryClient.invalidateQueries({ queryKey: ['vocabs'] });
+    },
+    onError: (err: any) => {
+      const message = err.response?.data?.message || 'Thêm từ thất bại. Vui lòng thử lại.';
+      toast.error(message);
+    },
+  });
+
   // ─── Handlers ─────────────────────────────────────────────────────────────
   const handleDeleteSingle = useCallback((id: string) => {
     setDeleteDialog({ open: true, ids: [id] });
@@ -238,7 +256,7 @@ export function VocabManagerContainer() {
           <Button 
             size="sm" 
             id="vocab-add-btn"
-            onClick={() => toast.info('Tính năng thêm từng từ đang được cập nhật. Vui lòng dùng Import CSV.')}
+            onClick={() => setAddDialog(true)}
           >
             <Plus className="h-4 w-4 mr-1.5" />
             Thêm từ
@@ -401,6 +419,13 @@ export function VocabManagerContainer() {
         onClose={() => setImportDialog(false)}
         onImport={doImport}
         isLoading={isImporting}
+      />
+
+      <AddVocabDialog
+        open={addDialog}
+        onClose={() => setAddDialog(false)}
+        onAdd={doAdd}
+        isLoading={isAdding}
       />
     </div>
   );

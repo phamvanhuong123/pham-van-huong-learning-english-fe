@@ -7,6 +7,7 @@ import { SubscriptionTable } from './SubscriptionTable';
 import { ImageLightbox } from './ImageLightbox';
 import { ApproveDialog } from './ApproveDialog';
 import { RejectDialog } from './RejectDialog';
+import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { Button } from '@/components/ui/button';
 import type { AdminSubscriptionItem, SubscriptionStatus, SubscriptionPlan } from '@/types/admin';
 
@@ -21,6 +22,7 @@ export function SubscriptionManagerContainer() {
   const [lightboxUrl, setLightboxUrl] = useState('');
   const [approveSub, setApproveSub] = useState<AdminSubscriptionItem | null>(null);
   const [rejectSub, setRejectSub] = useState<AdminSubscriptionItem | null>(null);
+  const [deleteSubId, setDeleteSubId] = useState<string | null>(null);
 
   // Get dashboard data for pending count badge
   const { data: dashboardData } = useQuery({
@@ -81,6 +83,18 @@ export function SubscriptionManagerContainer() {
     }
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: adminApi.deleteSubscription,
+    onSuccess: () => {
+      toast.success('Đã xóa yêu cầu thành công');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'subscriptions'] });
+      setDeleteSubId(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Không thể xóa yêu cầu. Vui lòng thử lại.');
+    }
+  });
+
   const handleApproveConfirm = (plan: SubscriptionPlan) => {
     if (!approveSub) return;
     updateMutation.mutate({ subId: approveSub.id, status: 'APPROVED', plan });
@@ -105,6 +119,7 @@ export function SubscriptionManagerContainer() {
         isLoading={isLoading}
         onApprove={(sub) => setApproveSub(sub)}
         onReject={(sub) => setRejectSub(sub)}
+        onDelete={(id) => setDeleteSubId(id)}
         onViewImage={(url) => setLightboxUrl(url)}
       />
 
@@ -161,6 +176,14 @@ export function SubscriptionManagerContainer() {
         onClose={() => setRejectSub(null)}
         onConfirm={handleRejectConfirm}
         isPending={updateMutation.isPending}
+      />
+
+      <DeleteConfirmDialog
+        open={!!deleteSubId}
+        onOpenChange={(open) => !open && setDeleteSubId(null)}
+        onConfirm={() => deleteSubId && deleteMutation.mutate(deleteSubId)}
+        isLoading={deleteMutation.isPending}
+        description="Dữ liệu về yêu cầu nâng cấp VIP này sẽ bị xóa vĩnh viễn khỏi hệ thống."
       />
     </div>
   );

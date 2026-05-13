@@ -63,6 +63,10 @@ export const adminApi = {
     await api.patch(`/admin/subscriptions/${params.subId}`, params.body);
   },
 
+  deleteSubscription: async (subId: string): Promise<void> => {
+    await api.delete(`/admin/subscriptions/${subId}`);
+  },
+
   // ─── Questions ─────────────────────────────────────────────────────────────
 
   getQuestions: async (params?: any) => {
@@ -96,6 +100,11 @@ export const adminApi = {
 
   updateExam: async ({ id, body }: { id: string; body: ExamUpdateBody }) => {
     const { data } = await api.patch(`/admin/exams/${id}`, body);
+    return data;
+  },
+
+  broadcastNotification: async (body: { title: string; body: string; targetRole: 'ALL' | 'STANDARD' | 'VIP' }) => {
+    const { data } = await api.post('/admin/notifications/broadcast', body);
     return data;
   },
 };

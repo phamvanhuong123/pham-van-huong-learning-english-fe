@@ -17,6 +17,7 @@ interface SubscriptionTableProps {
   isLoading?: boolean;
   onApprove: (sub: AdminSubscriptionItem) => void;
   onReject: (sub: AdminSubscriptionItem) => void;
+  onDelete: (subId: string) => void;
   onViewImage: (url: string) => void;
 }
 
@@ -26,6 +27,7 @@ export function SubscriptionTable({
   isLoading,
   onApprove,
   onReject,
+  onDelete,
   onViewImage,
 }: SubscriptionTableProps) {
   // Trạng thái load ảnh lỗi để show placeholder
@@ -140,6 +142,16 @@ export function SubscriptionTable({
                         <X className="w-4 h-4 mr-1" /> Từ chối
                       </Button>
                     </>
+                  ) : activeTab === 'REJECTED' ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-2 text-destructive border-destructive/20 hover:bg-destructive hover:text-destructive-foreground transition-all"
+                      onClick={() => onDelete(sub.id)}
+                      title="Xóa yêu cầu"
+                    >
+                      <X className="w-4 h-4 mr-1" /> Xóa
+                    </Button>
                   ) : (
                     <Button
                       variant="ghost"

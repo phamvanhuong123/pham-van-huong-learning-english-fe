@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router';
-import { Crown, Zap, BookOpen, BarChart3, CheckCircle2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Crown, Zap, BookOpen, BarChart3, CheckCircle2, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { subscriptionApi } from '@/services/subscriptionApi';
 
 interface VIPStatusCardProps {
   role: string;
@@ -17,6 +19,12 @@ const VIP_BENEFITS = [
 export function VIPStatusCard({ role, vipExpiresAt }: VIPStatusCardProps) {
   const navigate = useNavigate();
   const isVIP = role === 'VIP' || role === 'ADMIN';
+
+  const { data: pendingRequest } = useQuery({
+    queryKey: ['subscription', 'pending'],
+    queryFn: subscriptionApi.getPendingStatus,
+    enabled: !isVIP,
+  });
 
   if (isVIP) {
     const expiryText = vipExpiresAt
@@ -52,6 +60,27 @@ export function VIPStatusCard({ role, vipExpiresAt }: VIPStatusCardProps) {
     );
   }
 
+  if (pendingRequest) {
+    return (
+      <div className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/10 p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Clock className="h-5 w-5 text-amber-600" />
+          <h3 className="font-semibold text-amber-900 dark:text-amber-100">Đang chờ duyệt VIP</h3>
+        </div>
+        <p className="text-xs text-amber-800/80 dark:text-amber-200/80 leading-relaxed">
+          Yêu cầu nâng cấp gói <b>{pendingRequest.plan}</b> của bạn đang được quản trị viên xem xét.
+        </p>
+        <Button
+          variant="outline"
+          className="w-full border-amber-200 text-amber-700 hover:bg-amber-100"
+          onClick={() => navigate('/pricing')}
+        >
+          Xem chi tiết
+        </Button>
+      </div>
+    );
+  }
+
   // Standard user — upgrade banner
   return (
     <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-5 space-y-4">
@@ -71,8 +100,8 @@ export function VIPStatusCard({ role, vipExpiresAt }: VIPStatusCardProps) {
 
       <Button
         id="profile-upgrade-vip-btn"
-        className="w-full font-semibold"
-        onClick={() => navigate('/profile?tab=billing')}
+        className="w-full font-semibold shadow-lg shadow-primary/20"
+        onClick={() => navigate('/pricing')}
         aria-label="Nâng cấp tài khoản VIP"
       >
         <Crown className="h-4 w-4 mr-1.5" />
