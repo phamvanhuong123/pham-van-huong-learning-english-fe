@@ -2,6 +2,7 @@ import { useParams } from 'react-router';
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/modules/auth/store/useAuthStore';
+import { useRole } from '@/hooks/useRole';
 import { useExamStore } from './store/useExamStore';
 import { fetchExamById } from '@/services/workspaceExamApi';
 import { WorkspaceSkeleton } from './components/WorkspaceSkeleton';
@@ -27,7 +28,7 @@ import {
 
 export const ExamWorkspacePage = () => {
   const { examId } = useParams<{ examId: string }>();
-  const user = useAuthStore((state) => state.user);
+  const { user, isStandard } = useRole();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const { text: selectedText, example: selectionExample, rect: selectionRect, clearSelection } = useTextSelection();
@@ -76,7 +77,7 @@ export const ExamWorkspacePage = () => {
     );
   }
 
-  const isVipPreview = exam.type === 'VIP' && user?.role === 'STANDARD';
+  const isVipPreview = exam.type === 'VIP' && isStandard;
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-6 relative">

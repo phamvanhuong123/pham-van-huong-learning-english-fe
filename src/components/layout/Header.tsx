@@ -1,5 +1,4 @@
 import { Link, NavLink } from 'react-router';
-import { useAuthStore } from '@/modules/auth/store/useAuthStore';
 import { NotificationBell } from './NotificationBell';
 import { User, LogOut, LayoutDashboard, BookOpen, History, Library, BarChart3, Crown } from 'lucide-react';
 import {
@@ -9,10 +8,11 @@ import {
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { useLogout } from '@/hooks/useLogout';
+import { useRole } from '@/hooks/useRole';
 import { cn } from '@/lib/utils';
 
 export function Header() {
-  const user = useAuthStore((s) => s.user);
+  const { user, isVIP, isAdmin, isAtLeastVIP } = useRole();
   const { handleLogout, isLoggingOut } = useLogout();
 
   const navItems = [
@@ -59,7 +59,7 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          {user?.role !== 'VIP' && user?.role !== 'ADMIN' && (
+          {!isAtLeastVIP && (
             <Button 
               variant="outline" 
               size="sm" 
@@ -68,7 +68,7 @@ export function Header() {
             >
               <Link to="/pricing">
                 <Crown className="h-4 w-4" />
-                Go VIP
+                {isVIP ? 'Extend VIP' : 'Go VIP'}
               </Link>
             </Button>
           )}
@@ -98,9 +98,11 @@ export function Header() {
                 <Link to="/profile" className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-muted">
                   <User className="h-4 w-4" /> Hồ sơ
                 </Link>
-                <Link to="/pricing" className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-muted text-primary font-medium">
-                  <Crown className="h-4 w-4" /> Nâng cấp VIP
-                </Link>
+                {!isAdmin && (
+                  <Link to="/pricing" className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-muted text-primary font-medium">
+                    <Crown className="h-4 w-4" /> {isVIP ? 'Gia hạn VIP' : 'Nâng cấp VIP'}
+                  </Link>
+                )}
                 <div className="h-px bg-border my-1" />
                 <Button variant="ghost" size="sm" className="justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleLogout} disabled={isLoggingOut}>
                   <LogOut className="h-4 w-4" />

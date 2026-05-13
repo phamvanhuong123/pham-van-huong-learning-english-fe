@@ -34,8 +34,9 @@ export function useAppInit() {
         )
         .then((res) => {
           const newAccessToken = res.data.accessToken;
-          if (newAccessToken && user) {
-            setAuth(user, newAccessToken);
+          const updatedUser = res.data.user;
+          if (newAccessToken && updatedUser) {
+            setAuth(updatedUser, newAccessToken);
           }
         })
         .catch(() => {

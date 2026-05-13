@@ -11,9 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, GitCompare, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useRole } from '@/hooks/useRole';
 
-// Mock user role — thực tế lấy từ authStore
-const useUserRole = () => ({ role: 'STANDARD' as 'STANDARD' | 'VIP' | 'ADMIN' });
 
 const PART_OPTIONS: { label: string; value: FilterPart }[] = [
   { label: 'Tất cả', value: 'ALL' },
@@ -24,7 +23,7 @@ const PART_OPTIONS: { label: string; value: FilterPart }[] = [
 
 export default function ExamHistoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { role: userRole } = useUserRole();
+  const { role: userRole } = useRole();
 
   const part = (searchParams.get('part') ?? 'ALL') as FilterPart;
   const page = Number(searchParams.get('page') ?? '1');

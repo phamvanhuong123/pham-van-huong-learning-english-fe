@@ -1,12 +1,12 @@
 import { Navigate, Outlet } from 'react-router';
-import { useAuthStore } from '../../modules/auth/store/useAuthStore';
+import { useRole } from '@/hooks/useRole';
 
 interface ProtectedRouteProps {
   requiredRole?: 'STANDARD' | 'VIP' | 'ADMIN';
 }
 
 const ProtectedRoute = ({ requiredRole }: ProtectedRouteProps) => {
-  const user = useAuthStore((state) => state.user);
+  const { user, role } = useRole();
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -14,7 +14,7 @@ const ProtectedRoute = ({ requiredRole }: ProtectedRouteProps) => {
 
   if (requiredRole) {
     const roleHierarchy = { STANDARD: 1, VIP: 2, ADMIN: 3 };
-    const userRoleValue = roleHierarchy[user.role as keyof typeof roleHierarchy] || 0;
+    const userRoleValue = roleHierarchy[role] || 0;
     const requiredRoleValue = roleHierarchy[requiredRole] || 0;
 
     if (userRoleValue < requiredRoleValue) {

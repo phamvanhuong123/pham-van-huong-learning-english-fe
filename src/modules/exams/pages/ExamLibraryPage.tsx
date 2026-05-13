@@ -11,11 +11,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useExamStore } from '@/modules/workspace/store/useExamStore';
-const useUserRole = () => ({ role: 'STANDARD' as 'STANDARD' | 'VIP' | 'ADMIN' });
+import { useRole } from '@/hooks/useRole';
+
 export default function ExamLibraryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { role: userRole } = useUserRole();
+  const { role: userRole } = useRole();
   const sessions = useExamStore((state) => state.sessions);
 
 
