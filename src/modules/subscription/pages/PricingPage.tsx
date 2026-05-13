@@ -19,10 +19,6 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Dialog, 
   DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
-  DialogFooter
 } from '@/components/ui/dialog';
 import { subscriptionApi } from '@/services/subscriptionApi';
 import { cn } from '@/lib/utils';

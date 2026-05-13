@@ -1,9 +1,12 @@
 // ─── API Response Types ───────────────────────────────────────────────────────
+export type ExamPart = 'PART1' | 'PART2' | 'PART3' | 'PART4' | 'PART5' | 'PART6' | 'PART7' | 'FULL';
+export type MediaType = 'TEXT' | 'AUDIO' | 'IMAGE' | 'VIDEO';
+
 
 export interface ExamListItem {
   id: string;
   title: string;
-  part: 'PART5' | 'PART6' | 'PART7' | 'FULL';
+  part: ExamPart;
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   type: 'FREE' | 'VIP';
   totalQuestions: number;
@@ -26,7 +29,7 @@ export interface ExamResult {
   id: string;
   examId: string;
   examTitle: string;
-  part: 'PART5' | 'PART6' | 'PART7' | 'FULL';
+  part: ExamPart;
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   score: number;
   correctQ: number;
@@ -56,9 +59,10 @@ export interface QuestionDetail {
       id: string;
       passages: {
         id: string;
-        content: string;
+        content: string | null;
         order: number;
         mediaUrl?: string | null;
+        mediaType?: 'TEXT' | 'AUDIO' | 'IMAGE' | 'VIDEO';
       }[];
     } | null;
     questionText: string;
@@ -91,7 +95,7 @@ export interface ResultListResponse {
   };
 }
 
-export type FilterPart = 'ALL' | 'PART5' | 'PART6' | 'PART7' | 'FULL';
+export type FilterPart = 'ALL' | ExamPart;
 export type FilterDifficulty = 'ALL' | 'EASY' | 'MEDIUM' | 'HARD';
 export type FilterType = 'ALL' | 'FREE' | 'VIP';
 
@@ -102,7 +106,7 @@ export type ExamCardVariant = 'library' | 'history';
 export interface ExamCardBaseProps {
   id: string;
   title: string;
-  part: 'PART5' | 'PART6' | 'PART7' | 'FULL';
+  part: ExamPart;
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   type: 'FREE' | 'VIP';
   totalQuestions: number;

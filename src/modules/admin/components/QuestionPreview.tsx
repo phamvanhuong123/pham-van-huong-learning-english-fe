@@ -1,7 +1,8 @@
-import type { QuestionCreateBody, QuestionOption } from '@/types/admin';
+import type { Question, QuestionOption } from '@/types/admin';
+import { AudioPlayer } from '@/components/exam/AudioPlayer';
 
 interface QuestionPreviewProps {
-  question: Partial<QuestionCreateBody>;
+  question: Partial<Question>;
 }
 
 export function QuestionPreview({ question }: QuestionPreviewProps) {
@@ -33,13 +34,32 @@ export function QuestionPreview({ question }: QuestionPreviewProps) {
         {question.passageGroup && question.passageGroup.passages && (
           <div className="space-y-4">
             {question.passageGroup.passages.map((p: any) => (
-              <div key={p.id} className="bg-muted/30 p-4 rounded-lg border border-border/50 text-sm leading-relaxed whitespace-pre-wrap border-l-4 border-primary/30">
+              <div key={p.id || p.order} className="bg-muted/30 p-4 rounded-lg border border-border/50 border-l-4 border-primary/30">
                 <div className="text-[10px] font-bold text-primary mb-1 uppercase tracking-wider">
-                  Đoạn văn {question.passageGroup.passages.length > 1 ? p.order : ''}
+                  Đoạn văn {(question.passageGroup?.passages?.length ?? 0) > 1 ? p.order : ''}
                 </div>
-                {p.content}
-                {p.mediaUrl && (
+                <div 
+                  className="text-sm leading-relaxed passage-content"
+                  dangerouslySetInnerHTML={{ __html: p.content || '' }}
+                />
+                {p.mediaType === 'AUDIO' ? (
+                  <AudioPlayer url={p.mediaUrl} className="mt-2" />
+                ) : p.mediaType === 'VIDEO' ? (
+                  <div className="space-y-2 mt-2">
+                    <img 
+                      src={p.mediaUrl?.replace(/\.(mp4|mov|avi|wmv|flv|mkv|webm)$/i, '.jpg')} 
+                      alt="Video thumbnail" 
+                      className="rounded max-w-full h-auto border shadow-sm"
+                    />
+                    <AudioPlayer url={p.mediaUrl} />
+                  </div>
+                ) : p.mediaType === 'IMAGE' ? (
                   <img src={p.mediaUrl} alt="Passage" className="mt-2 rounded max-w-full h-auto border" />
+                ) : (
+                  /* Fallback */
+                  p.mediaUrl && (
+                    <img src={p.mediaUrl} alt="Passage" className="mt-2 rounded max-w-full h-auto border" />
+                  )
                 )}
               </div>
             ))}

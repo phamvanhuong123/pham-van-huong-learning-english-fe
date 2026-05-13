@@ -4,27 +4,31 @@ export interface Option {
   text: string;
 }
 
+export interface Passage {
+  id: string;
+  content?: string | null;
+  order: number;
+  mediaUrl?: string | null;
+  mediaType: 'TEXT' | 'AUDIO' | 'IMAGE';
+}
+
 export interface Question {
   id: string;
   order: number;
   questionText: string;
   options: Option[];
+  metadata?: any;
   passageGroupId?: string | null;
   passageGroup?: {
     id: string;
-    passages: {
-      id: string;
-      content: string;
-      order: number;
-      mediaUrl?: string | null;
-    }[];
+    passages: Passage[];
   } | null;
 }
 
 export interface Exam {
   id: string;
   title: string;
-  part: 'PART5' | 'PART6' | 'PART7' | 'FULL';
+  part: 'PART1' | 'PART2' | 'PART3' | 'PART4' | 'PART5' | 'PART6' | 'PART7' | 'FULL';
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   type: 'FREE' | 'VIP'; // Thêm trường type để check VIP guard
   duration: number;

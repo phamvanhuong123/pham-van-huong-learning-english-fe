@@ -31,7 +31,10 @@ interface ExamFormDialogProps {
   allExams?: AdminExamItem[];
 }
 
-const PART_ORDER: Record<string, number> = { PART5: 1, PART6: 2, PART7: 3 };
+const PART_ORDER: Record<string, number> = { 
+  PART1: 1, PART2: 2, PART3: 3, PART4: 4, 
+  PART5: 5, PART6: 6, PART7: 7 
+};
 
 export function ExamFormDialog({
   isOpen,
@@ -50,6 +53,10 @@ export function ExamFormDialog({
 
   // State cho FULL — map part → examId đã chọn
   const [selectedComponents, setSelectedComponents] = useState<Record<string, string>>({
+    PART1: '',
+    PART2: '',
+    PART3: '',
+    PART4: '',
     PART5: '',
     PART6: '',
     PART7: '',
@@ -59,6 +66,10 @@ export function ExamFormDialog({
   const availableExams = allExams.filter((e) => e.part !== 'FULL' && !e.parentExamId);
 
   const examsByPart: Record<string, AdminExamItem[]> = {
+    PART1: availableExams.filter((e) => e.part === 'PART1'),
+    PART2: availableExams.filter((e) => e.part === 'PART2'),
+    PART3: availableExams.filter((e) => e.part === 'PART3'),
+    PART4: availableExams.filter((e) => e.part === 'PART4'),
     PART5: availableExams.filter((e) => e.part === 'PART5'),
     PART6: availableExams.filter((e) => e.part === 'PART6'),
     PART7: availableExams.filter((e) => e.part === 'PART7'),
@@ -74,7 +85,10 @@ export function ExamFormDialog({
         setDuration(initialData.duration || 15);
         // Khôi phục childExams nếu đang edit đề FULL
         if (initialData.part === 'FULL' && initialData.childExams) {
-          const comp: Record<string, string> = { PART5: '', PART6: '', PART7: '' };
+          const comp: Record<string, string> = { 
+            PART1: '', PART2: '', PART3: '', PART4: '',
+            PART5: '', PART6: '', PART7: '' 
+          };
           initialData.childExams.forEach((c) => { comp[c.part] = c.id; });
           setSelectedComponents(comp);
         }
@@ -84,7 +98,10 @@ export function ExamFormDialog({
         setDifficulty('EASY');
         setType('FREE');
         setDuration(15);
-        setSelectedComponents({ PART5: '', PART6: '', PART7: '' });
+        setSelectedComponents({ 
+          PART1: '', PART2: '', PART3: '', PART4: '',
+          PART5: '', PART6: '', PART7: '' 
+        });
       }
       setErrors({});
     }
@@ -114,7 +131,11 @@ export function ExamFormDialog({
   };
 
   const partLabels: Record<string, { label: string; color: string; desc: string }> = {
-    PART5: { label: 'Part 5', color: 'bg-blue-100 text-blue-700 border-blue-200', desc: 'Grammar (30-40 câu điền từ độc lập)' },
+    PART1: { label: 'Part 1', color: 'bg-orange-100 text-orange-700 border-orange-200', desc: 'Photos (6 tranh ảnh)' },
+    PART2: { label: 'Part 2', color: 'bg-yellow-100 text-yellow-700 border-yellow-200', desc: 'Question-Response (25 câu hỏi)' },
+    PART3: { label: 'Part 3', color: 'bg-indigo-100 text-indigo-700 border-indigo-200', desc: 'Short Conversations (13 đoạn, 3 câu/đoạn)' },
+    PART4: { label: 'Part 4', color: 'bg-cyan-100 text-cyan-700 border-cyan-200', desc: 'Short Talks (10 đoạn, 3 câu/đoạn)' },
+    PART5: { label: 'Part 5', color: 'bg-blue-100 text-blue-700 border-blue-200', desc: 'Grammar (30 câu điền từ)' },
     PART6: { label: 'Part 6', color: 'bg-purple-100 text-purple-700 border-purple-200', desc: 'Passage Completion (4 đoạn, 4 câu/đoạn)' },
     PART7: { label: 'Part 7', color: 'bg-green-100 text-green-700 border-green-200', desc: 'Reading Comprehension (nhiều đoạn văn)' },
   };
@@ -166,6 +187,10 @@ export function ExamFormDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="PART1">Part 1 (Photos)</SelectItem>
+                    <SelectItem value="PART2">Part 2 (Question-Response)</SelectItem>
+                    <SelectItem value="PART3">Part 3 (Short Conversations)</SelectItem>
+                    <SelectItem value="PART4">Part 4 (Short Talks)</SelectItem>
                     <SelectItem value="PART5">Part 5 (Grammar)</SelectItem>
                     <SelectItem value="PART6">Part 6 (Passage)</SelectItem>
                     <SelectItem value="PART7">Part 7 (Reading)</SelectItem>
@@ -205,7 +230,7 @@ export function ExamFormDialog({
                 <p className="text-xs text-red-500 font-medium">{errors.components}</p>
               )}
 
-              {(['PART5', 'PART6', 'PART7'] as const).sort((a, b) => PART_ORDER[a] - PART_ORDER[b]).map((p) => (
+              {[...(['PART1', 'PART2', 'PART3', 'PART4', 'PART5', 'PART6', 'PART7'] as const)].sort((a, b) => PART_ORDER[a] - PART_ORDER[b]).map((p) => (
                 <div key={p} className="space-y-2">
                   <Label className="text-sm font-medium flex items-center gap-2">
                     <span className={`text-xs font-bold px-2 py-0.5 rounded border ${partLabels[p].color}`}>
@@ -247,8 +272,8 @@ export function ExamFormDialog({
               {/* Tổng kết câu hỏi */}
               {Object.values(selectedComponents).some((val) => val && val !== 'none') && (
                 <div className="bg-muted/40 rounded-lg p-4 text-sm space-y-1">
-                  <p className="font-medium text-muted-foreground mb-2">📊 Tổng kết đề FULL:</p>
-                  {(['PART5', 'PART6', 'PART7'] as const).map((p) => {
+                  <p className="font-medium text-muted-foreground mb-2"> Tổng kết đề FULL:</p>
+                  {(['PART1', 'PART2', 'PART3', 'PART4', 'PART5', 'PART6', 'PART7'] as const).map((p) => {
                     const exam = allExams.find((e) => e.id === selectedComponents[p]);
                     if (!exam) return null;
                     return (

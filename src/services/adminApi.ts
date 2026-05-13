@@ -15,6 +15,17 @@ import type {
 } from '@/types/admin';
 
 export const adminApi = {
+  uploadMedia: async (file: File): Promise<{ url: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await api.post<{ url: string }>('/admin/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return data;
+  },
+
   getPassageGroups: async (examId: string): Promise<PassageGroup[]> => {
     const { data } = await api.get<PassageGroup[]>(`/admin/passage-groups/${examId}`);
     return data;
@@ -28,6 +39,10 @@ export const adminApi = {
   updatePassageGroup: async (id: string, body: { passages: any[] }): Promise<PassageGroup> => {
     const { data } = await api.patch<PassageGroup>(`/admin/passage-groups/${id}`, body);
     return data;
+  },
+
+  deletePassageGroup: async (id: string): Promise<void> => {
+    await api.delete(`/admin/passage-groups/${id}`);
   },
 
   getDashboard: async (): Promise<AdminDashboardData> => {
@@ -117,6 +132,3 @@ export const adminApi = {
     await api.delete(`/admin/notifications/broadcasts/${id}`);
   },
 };
-
-
-

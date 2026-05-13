@@ -21,9 +21,13 @@ import type { QuestionCreateBody, QuestionDifficulty, OptionLabel } from '@/type
 import {
   Pencil, Sparkles, ArrowLeft, EyeOff, Eye, Save, Loader2,
   CheckCircle2, Info, ListChecks, Settings2, Check, PlusCircle,
-  AlertCircle, FileText,
+  AlertCircle, FileText, Upload, Trash2,
 } from 'lucide-react';
 import { adminApi } from '@/services/adminApi';
+import { toast } from 'sonner';
+import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
 interface ExamOption {
   id: string;
@@ -66,12 +70,17 @@ export function QuestionFormDialog({
   const [grammarTopic, setGrammarTopic] = useState('');
   const [difficulty, setDifficulty] = useState<QuestionDifficulty>('EASY');
   const [explanation, setExplanation] = useState('');
+  const [metadata, setMetadata] = useState<any>({ hideQuestionText: false, hideOptionsText: false });
   
   // New state for creating/editing passage group
   const [isCreatingPassage, setIsCreatingPassage] = useState(false);
   const [isEditingGroup, setIsEditingGroup] = useState(false);
-  const [newPassages, setNewPassages] = useState<any[]>([{ content: '', order: 1 }]);
+  const [newPassages, setNewPassages] = useState<any[]>([{ content: '', order: 1, mediaType: 'TEXT', mediaUrl: '' }]);
   const [isCreatingGroupPending, setIsCreatingGroupPending] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<Record<number, File>>({}); // Store files locally before upload
+  const [isUploading, setIsUploading] = useState<number | null>(null); 
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeletingGroup, setIsDeletingGroup] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPreview, setShowPreview] = useState(false);
@@ -83,13 +92,13 @@ export function QuestionFormDialog({
     return found?.part ?? null;
   }, [examId, exams]);
 
-  // Part 6 hoặc 7 mới cần passage
-  const requiresPassage = selectedExamPart === 'PART6' || selectedExamPart === 'PART7';
+  // Part 1, 2, 3, 4, 6 hoặc 7 đều cần nội dung đi kèm (Audio/Ảnh/Đoạn văn)
+  const requiresPassage = ['PART1', 'PART2', 'PART3', 'PART4', 'PART6', 'PART7'].includes(selectedExamPart ?? '');
 
   // ─── Khởi tạo form ────────────────────────────────────────────────────────
   // Tải danh sách Passage Groups khi examId thay đổi
   useEffect(() => {
-    if (examId && (selectedExamPart === 'PART6' || selectedExamPart === 'PART7')) {
+    if (examId && requiresPassage) {
       setIsLoadingGroups(true);
       adminApi.getPassageGroups(examId)
         .then(setPassageGroups)
@@ -98,7 +107,7 @@ export function QuestionFormDialog({
     } else {
       setPassageGroups([]);
     }
-  }, [examId, selectedExamPart]);
+  }, [examId, selectedExamPart, requiresPassage]);
 
   useEffect(() => {
     if (isOpen) {
@@ -113,6 +122,7 @@ export function QuestionFormDialog({
         setGrammarTopic(initialData.grammarTopic || '');
         setDifficulty(initialData.difficulty || 'EASY');
         setExplanation(initialData.explanation || '');
+        setMetadata(initialData.metadata || { hideQuestionText: false, hideOptionsText: false });
       } else {
         setExamId('');
         setOrder(1);
@@ -122,6 +132,7 @@ export function QuestionFormDialog({
         setGrammarTopic('');
         setDifficulty('EASY');
         setExplanation('');
+        setMetadata({ hideQuestionText: false, hideOptionsText: false });
       }
       setErrors({});
       setShowPreview(false);
@@ -129,6 +140,18 @@ export function QuestionFormDialog({
   }, [isOpen, initialData]);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
+  // Helper to strip HTML tags for preview/labels
+  const stripHtml = (html: string) => {
+    const tmp = document.createElement("DIV");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+  };
+
+  const getVideoThumbnail = (url: string) => {
+    if (!url) return '';
+    // Hỗ trợ Cloudinary: đổi đuôi mp4/mov/etc sang jpg
+    return url.replace(/\.(mp4|mov|avi|wmv|flv|mkv|webm)$/i, '.jpg');
+  };
   const handleOptionChange = (index: number, text: string) => {
     const newOptions = [...options];
     newOptions[index].text = text;
@@ -143,33 +166,83 @@ export function QuestionFormDialog({
     }
   };
 
+  const handleFileUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Giới hạn 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File quá lớn (tối đa 5MB). Vui lòng chọn file nhỏ hơn.');
+      return;
+    }
+
+    setPendingFiles(prev => ({ ...prev, [index]: file }));
+    
+    const updated = [...newPassages];
+    // Tạm thời hiển thị tên file để người dùng biết đã chọn
+    updated[index].mediaUrl = `[Sẵn sàng tải lên: ${file.name}]`;
+    
+    // Tự động nhận diện loại nội dung
+    if (updated[index].mediaType === 'TEXT') {
+      const isListening = ['PART1', 'PART2', 'PART3', 'PART4'].includes(selectedExamPart || '');
+      if (file.type.startsWith('audio/') || file.type.startsWith('video/')) {
+        updated[index].mediaType = 'AUDIO';
+      }
+      if (file.type.startsWith('image/')) {
+        updated[index].mediaType = isListening ? 'AUDIO' : 'IMAGE'; // Map to AUDIO container for listening
+      }
+    }
+    setNewPassages(updated);
+    toast.info(`Đã chọn: ${file.name}. File sẽ được tải lên khi bạn nhấn "Lưu".`);
+  };
+
   const clearError = (key: string) =>
     setErrors((prev) => { const n = { ...prev }; delete n[key]; return n; });
 
   const handleSavePassageGroup = async () => {
     if (!examId) {
-      setErrors({ examId: 'Vui lòng chọn đề thi trước' });
+      toast.error('Vui lòng chọn đề thi trước');
       return;
     }
-    
-    const validPassages = newPassages.filter(p => p.content.trim());
+
+    const validPassages = newPassages.filter(p => p.content.trim() || p.mediaUrl.trim());
     if (validPassages.length === 0) {
-      alert('Vui lòng nhập nội dung cho ít nhất một đoạn văn');
+      toast.warning('Vui lòng nhập nội dung hoặc chọn file cho ít nhất một mục');
       return;
     }
 
     setIsCreatingGroupPending(true);
     try {
+      // 1. Tải các file đang chờ lên Cloudinary
+      const finalPassages = [...newPassages];
+      const indicesToUpload = Object.keys(pendingFiles).map(Number);
+      
+      for (const idx of indicesToUpload) {
+        setIsUploading(idx);
+        try {
+          const { url } = await adminApi.uploadMedia(pendingFiles[idx]);
+          finalPassages[idx].mediaUrl = url;
+        } catch (uploadErr) {
+          toast.error(`Lỗi tải file "${pendingFiles[idx].name}" lên máy chủ.`);
+          throw uploadErr;
+        } finally {
+          setIsUploading(null);
+        }
+      }
+
+      // 2. Lưu cụm nội dung vào Database
       let group;
       if (isEditingGroup && passageGroupId) {
-        group = await adminApi.updatePassageGroup(passageGroupId, { passages: validPassages });
+        group = await adminApi.updatePassageGroup(passageGroupId, { passages: finalPassages });
       } else {
         group = await adminApi.createPassageGroup({
           examId,
           order: passageGroups.length + 1,
-          passages: validPassages
+          passages: finalPassages
         });
       }
+      
+      toast.success('Đã lưu nội dung thành công');
       
       // Refresh list
       const updatedGroups = await adminApi.getPassageGroups(examId);
@@ -177,25 +250,67 @@ export function QuestionFormDialog({
       setPassageGroupId(group.id);
       setIsCreatingPassage(false);
       setIsEditingGroup(false);
-      setNewPassages([{ content: '', order: 1 }]);
+      setNewPassages([{ content: '', order: 1, mediaType: 'TEXT', mediaUrl: '' }]);
+      setPendingFiles({});
     } catch (error) {
       console.error('Failed to save passage group', error);
-      alert('Có lỗi xảy ra');
+      toast.error('Không thể lưu nội dung. Vui lòng kiểm tra lại.');
     } finally {
       setIsCreatingGroupPending(false);
+    }
+  };
+
+  const handleDeletePassageGroup = async () => {
+    if (!passageGroupId) return;
+    
+    setIsDeletingGroup(true);
+    try {
+      await adminApi.deletePassageGroup(passageGroupId);
+      toast.success('Đã xóa cụm nội dung thành công');
+      
+      // Refresh list
+      const updatedGroups = await adminApi.getPassageGroups(examId);
+      setPassageGroups(updatedGroups);
+      setPassageGroupId('');
+      setIsDeleteDialogOpen(false);
+    } catch (error: any) {
+      console.error('Failed to delete passage group', error);
+      const msg = error.response?.data?.message || 'Không thể xóa cụm nội dung.';
+      toast.error(msg);
+    } finally {
+      setIsDeletingGroup(false);
     }
   };
 
   const startEditingGroup = () => {
     const group = passageGroups.find(g => g.id === passageGroupId);
     if (group) {
-      setNewPassages(group.passages.map((p: any) => ({ content: p.content, order: p.order })));
+      setNewPassages(group.passages.map((p: any) => ({ 
+        content: p.content, 
+        order: p.order,
+        mediaType: p.mediaType || 'TEXT',
+        mediaUrl: p.mediaUrl || ''
+      })));
       setIsEditingGroup(true);
       setIsCreatingPassage(true);
     }
   };
 
   // ─── Validation ────────────────────────────────────────────────────────────
+  // Quill modules configuration
+  const quillModules = {
+    toolbar: [
+      ['bold', 'italic', 'underline'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['clean']
+    ],
+  };
+
+  const quillFormats = [
+    'bold', 'italic', 'underline',
+    'list', 'bullet'
+  ];
+
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!examId) newErrors.examId = 'Vui lòng chọn đề thi';
@@ -231,6 +346,7 @@ export function QuestionFormDialog({
         explanation,
         grammarTopic,
         difficulty,
+        metadata,
         status,
       },
       isContinue,
@@ -263,6 +379,10 @@ export function QuestionFormDialog({
 
   // ─── Part badge helper ─────────────────────────────────────────────────────
   const partBadge: Record<string, { label: string; color: string }> = {
+    PART1: { label: 'Part 1 — Photos', color: 'bg-orange-100 text-orange-700' },
+    PART2: { label: 'Part 2 — Response', color: 'bg-yellow-100 text-yellow-700' },
+    PART3: { label: 'Part 3 — Conversations', color: 'bg-indigo-100 text-indigo-700' },
+    PART4: { label: 'Part 4 — Talks', color: 'bg-cyan-100 text-cyan-700' },
     PART5: { label: 'Part 5 — Grammar', color: 'bg-blue-100 text-blue-700' },
     PART6: { label: 'Part 6 — Passage', color: 'bg-purple-100 text-purple-700' },
     PART7: { label: 'Part 7 — Reading', color: 'bg-green-100 text-green-700' },
@@ -362,13 +482,12 @@ export function QuestionFormDialog({
                 </div>
 
                 {/* ── Nhóm bài đọc — chỉ hiện khi PART6/PART7 ── */}
-                {/* ── Nhóm bài đọc — chỉ hiện khi PART6/PART7 ── */}
                 {requiresPassage ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-semibold flex items-center gap-2">
                         <FileText className="w-4 h-4 text-purple-500" />
-                        Cụm bài đọc / Passage Group <span className="text-red-500">*</span>
+                        Nội dung đính kèm (Audio/Ảnh/Đoạn văn) <span className="text-red-500">*</span>
                       </Label>
                       <Button 
                         type="button" 
@@ -378,7 +497,7 @@ export function QuestionFormDialog({
                           if (isCreatingPassage) {
                             setIsCreatingPassage(false);
                             setIsEditingGroup(false);
-                            setNewPassages([{ content: '', order: 1 }]);
+                            setNewPassages([{ content: '', order: 1, mediaType: 'TEXT', mediaUrl: '' }]);
                           } else {
                             setIsCreatingPassage(true);
                             setIsEditingGroup(false);
@@ -397,34 +516,111 @@ export function QuestionFormDialog({
                     {isCreatingPassage ? (
                       <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2">
                         <div className="text-xs font-bold text-primary uppercase tracking-wider mb-2">
-                          {isEditingGroup ? 'Chỉnh sửa cụm bài đọc' : 'Thiết lập cụm bài đọc mới'}
+                          {isEditingGroup ? 'Chỉnh sửa nội dung media' : 'Thiết lập nội dung media mới (Audio/Ảnh...)'}
                         </div>
                         
                         {newPassages.map((p, idx) => (
-                          <div key={idx} className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-bold text-muted-foreground uppercase">Đoạn văn {idx + 1}</span>
+                          <div key={idx} className="bg-white border rounded-xl p-4 shadow-sm space-y-3">
+                            <div className="flex items-center justify-between border-b pb-2 mb-2">
+                              <span className="text-xs font-bold text-primary uppercase">Mục nội dung {idx + 1}</span>
                               {newPassages.length > 1 && (
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
                                   onClick={() => setNewPassages(prev => prev.filter((_, i) => i !== idx))}
-                                  className="h-6 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                  className="h-6 text-red-500 hover:text-red-600 px-2"
                                 >
-                                  Xóa
+                                  Gỡ bỏ
                                 </Button>
                               )}
                             </div>
-                            <textarea
-                              className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[100px] resize-y"
-                              placeholder={`Nhập nội dung đoạn văn ${idx + 1}...`}
-                              value={p.content}
-                              onChange={(e) => {
-                                const updated = [...newPassages];
-                                updated[idx].content = e.target.value;
-                                setNewPassages(updated);
-                              }}
-                            />
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <Label className="text-[10px] font-bold text-muted-foreground uppercase">Loại nội dung</Label>
+                                <Select 
+                                  value={p.mediaType} 
+                                  onValueChange={(val) => {
+                                    const updated = [...newPassages];
+                                    updated[idx].mediaType = val;
+                                    setNewPassages(updated);
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="TEXT">Văn bản (Text)</SelectItem>
+                                    <SelectItem value="AUDIO">Âm thanh / Video (Audio only)</SelectItem>
+                                    <SelectItem value="VIDEO">Video (Smart: Ảnh + Audio)</SelectItem>
+                                    {!['PART1', 'PART2', 'PART3', 'PART4'].includes(selectedExamPart || '') && (
+                                      <SelectItem value="IMAGE">Hình ảnh (Image)</SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div className="space-y-1">
+                                <Label className="text-[10px] font-bold text-muted-foreground uppercase">Media URL / File Upload</Label>
+                                <div className="flex gap-2">
+                                  <Input 
+                                    className="h-8 text-xs flex-1" 
+                                    placeholder="Link Cloudinary..." 
+                                    value={p.mediaUrl || ''}
+                                    onChange={(e) => {
+                                      const updated = [...newPassages];
+                                      updated[idx].mediaUrl = e.target.value;
+                                      setNewPassages(updated);
+                                    }}
+                                  />
+                                  <div className="relative">
+                                    <input
+                                      type="file"
+                                      id={`file-upload-${idx}`}
+                                      className="hidden"
+                                      accept="audio/*,image/*,video/*"
+                                      onChange={(e) => handleFileUpload(idx, e)}
+                                      disabled={isUploading !== null}
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8 px-2"
+                                      disabled={isUploading !== null}
+                                      onClick={() => document.getElementById(`file-upload-${idx}`)?.click()}
+                                    >
+                                      {isUploading === idx ? (
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                      ) : (
+                                        <Upload className="w-3 h-3" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                Nội dung đoạn văn
+                              </Label>
+                              <div className="quill-editor-wrapper bg-white rounded-lg border border-input focus-within:ring-2 focus-within:ring-primary/20 transition-all overflow-hidden">
+                                <ReactQuill
+                                  theme="snow"
+                                  value={p.content}
+                                  onChange={(content) => {
+                                    const updated = [...newPassages];
+                                    updated[idx].content = content;
+                                    setNewPassages(updated);
+                                  }}
+                                  modules={quillModules}
+                                  formats={quillFormats}
+                                  placeholder="Nhập nội dung đoạn văn tại đây (hỗ trợ in đậm, in nghiêng, danh sách...)"
+                                  className="min-h-[150px]"
+                                />
+                              </div>
+                            </div>
                           </div>
                         ))}
                         
@@ -433,10 +629,10 @@ export function QuestionFormDialog({
                             type="button" 
                             variant="outline" 
                             size="sm" 
-                            onClick={() => setNewPassages(prev => [...prev, { content: '', order: prev.length + 1 }])}
+                            onClick={() => setNewPassages(prev => [...prev, { content: '', order: prev.length + 1, mediaType: 'TEXT', mediaUrl: '' }])}
                             className="flex-1 h-9 border-dashed border-primary/50 text-primary hover:bg-primary/5"
                           >
-                            <PlusCircle className="w-3 h-3 mr-2" /> Thêm đoạn văn
+                            <PlusCircle className="w-3 h-3 mr-2" /> Thêm mục nội dung
                           </Button>
                           <Button 
                             type="button" 
@@ -474,12 +670,12 @@ export function QuestionFormDialog({
                                     <p className="text-[10px] text-primary">Nhấn "Tạo cụm mới" để bắt đầu.</p>
                                   </div>
                                 ) : (
-                                  passageGroups.map((group, idx) => (
+                                  passageGroups.map((group) => (
                                     <SelectItem key={group.id} value={group.id}>
                                       <div className="flex flex-col py-1">
-                                        <span className="font-semibold text-xs">Cụm {group.order} — {group.passages.length} đoạn văn</span>
+                                        <span className="font-semibold text-xs">Media {group.order} — {group.passages.length} mục nội dung</span>
                                         <span className="text-[10px] text-muted-foreground line-clamp-1 italic">
-                                          {group.passages[0]?.content?.substring(0, 80)}...
+                                          [{group.passages[0]?.mediaType}] {stripHtml(group.passages[0]?.content || '').substring(0, 80)}...
                                         </span>
                                       </div>
                                     </SelectItem>
@@ -489,15 +685,26 @@ export function QuestionFormDialog({
                             </Select>
                           </div>
                           {passageGroupId && (
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={startEditingGroup}
-                              className="h-10 border-primary/20 text-primary hover:bg-primary/5"
-                            >
-                              <Pencil className="w-3 h-3 mr-2" /> Sửa bài đọc
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={startEditingGroup}
+                                className="h-10 border-primary/20 text-primary hover:bg-primary/5"
+                              >
+                                <Pencil className="w-3 h-3 mr-2" /> Sửa
+                              </Button>
+                                <Button 
+                                  type="button" 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => setIsDeleteDialogOpen(true)}
+                                  className="h-10 border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                            </div>
                           )}
                         </div>
 
@@ -614,8 +821,34 @@ export function QuestionFormDialog({
               {/* ── Card metadata ── */}
               <div className="bg-white rounded-xl shadow-sm border p-6 space-y-5">
                 <h3 className="font-semibold text-base flex items-center gap-2 text-primary">
-                  <Settings2 className="w-5 h-5" /> Thông tin bổ sung
+                  <Settings2 className="w-5 h-5" /> Thông tin bổ sung & Hiển thị
                 </h3>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
+                  <Label className="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-2">
+                    <Eye className="w-3 h-3" /> Cấu hình hiển thị (Dùng cho Listening)
+                  </Label>
+                  <div className="flex flex-wrap gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <div className={`w-10 h-6 rounded-full p-1 transition-colors ${metadata?.hideQuestionText ? 'bg-primary' : 'bg-muted'}`}
+                        onClick={() => setMetadata((prev: any) => ({ ...prev, hideQuestionText: !prev.hideQuestionText }))}>
+                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${metadata?.hideQuestionText ? 'translate-x-4' : 'translate-x-0'}`} />
+                      </div>
+                      <span className="text-xs font-medium text-amber-900">Ẩn text câu hỏi</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <div className={`w-10 h-6 rounded-full p-1 transition-colors ${metadata?.hideOptionsText ? 'bg-primary' : 'bg-muted'}`}
+                        onClick={() => setMetadata((prev: any) => ({ ...prev, hideOptionsText: !prev.hideOptionsText }))}>
+                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${metadata?.hideOptionsText ? 'translate-x-4' : 'translate-x-0'}`} />
+                      </div>
+                      <span className="text-xs font-medium text-amber-900">Ẩn text đáp án</span>
+                    </label>
+                  </div>
+                  <p className="text-[10px] text-amber-700 italic leading-relaxed">
+                    * Lưu ý: Part 1 & 2 thường ẩn cả text câu hỏi và đáp án. Học viên chỉ chọn A/B/C/D dựa trên những gì nghe được.
+                  </p>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -738,6 +971,15 @@ export function QuestionFormDialog({
           </div>
         </SheetFooter>
       </SheetContent>
+
+      <DeleteConfirmDialog 
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleDeletePassageGroup}
+        isLoading={isDeletingGroup}
+        title="Xóa cụm nội dung?"
+        description="Toàn bộ tệp âm thanh/video và nội dung trong cụm này sẽ bị xóa khỏi hệ thống và Cloudinary. Bạn có chắc chắn?"
+      />
     </Sheet>
   );
 }

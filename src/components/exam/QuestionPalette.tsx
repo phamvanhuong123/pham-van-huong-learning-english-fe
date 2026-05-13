@@ -2,7 +2,7 @@ import React from 'react';
 import { useExamStore } from '@/modules/workspace/store/useExamStore';
 import { cn } from '@/lib/utils';
 import { Flag } from 'lucide-react';
-import type { Question } from '@/modules/workspace/types';
+import type { Question } from '@/types/workspace';
 
 interface QuestionPaletteProps {
   questions: Question[];

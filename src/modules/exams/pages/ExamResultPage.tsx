@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, CheckCircle2, XCircle, Clock, Target, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AudioPlayer } from '@/components/exam/AudioPlayer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { fetchResultById } from '@/services/examLibraryApi';
@@ -224,11 +225,58 @@ export default function ExamResultPage() {
                             <div className="text-sm font-bold text-primary mb-3 uppercase tracking-wider flex items-center gap-2">
                               <BookOpen className="h-4 w-4" /> Đoạn văn {group.passageGroup.passages.length > 1 ? p.order : ''}
                             </div>
-                            <div className="text-base leading-relaxed whitespace-pre-wrap font-serif text-foreground/90">
-                              {p.content}
-                            </div>
-                            {p.mediaUrl && (
-                              <img src={p.mediaUrl} alt="Passage illustration" className="mt-4 rounded-lg max-w-full h-auto border" />
+                            <div 
+                              className="text-base leading-relaxed font-serif text-foreground/90 passage-content"
+                              dangerouslySetInnerHTML={{ __html: p.content || '' }}
+                            />
+                            {p.mediaType === 'AUDIO' ? (
+                              <AudioPlayer url={p.mediaUrl} className="mt-4" />
+                            ) : p.mediaType === 'VIDEO' ? (
+                              <div className="space-y-4 mt-4">
+                                {data.exam.part?.toUpperCase() === 'PART1' && (
+                                  <div className="rounded-xl overflow-hidden border bg-white p-2 shadow-sm">
+                                    <img 
+                                      src={p.mediaUrl?.replace(/\.(mp4|mov|avi|wmv|flv|mkv|webm)$/i, '.jpg')} 
+                                      alt="Passage illustration" 
+                                      className="w-full h-auto object-contain mx-auto" 
+                                    />
+                                  </div>
+                                )}
+                                <AudioPlayer url={p.mediaUrl} />
+                              </div>
+                            ) : p.mediaType === 'IMAGE' ? (
+                              <div className="mt-4 rounded-xl overflow-hidden border bg-white p-2 shadow-sm">
+                                <img src={p.mediaUrl} alt="Passage illustration" className="w-full h-auto object-contain mx-auto" />
+                              </div>
+                            ) : (
+                              /* Fallback for old data without mediaType or unknown type */
+                              p.mediaUrl ? (
+                                p.mediaUrl.match(/\.(mp4|mov|avi|wmv|flv|mkv|webm)$/i) ? (
+                                  <div className="space-y-4 mt-4">
+                                    {data.exam.part?.toUpperCase() === 'PART1' && (
+                                      <div className="rounded-xl overflow-hidden border bg-white p-2 shadow-sm">
+                                        <img 
+                                          src={p.mediaUrl.replace(/\.(mp4|mov|avi|wmv|flv|mkv|webm)$/i, '.jpg')} 
+                                          alt="Passage illustration" 
+                                          className="w-full h-auto object-contain mx-auto" 
+                                        />
+                                      </div>
+                                    )}
+                                    <AudioPlayer url={p.mediaUrl} />
+                                  </div>
+                                ) : p.mediaUrl.match(/\.(mp3|wav|ogg|m4a)$/i) ? (
+                                  <AudioPlayer url={p.mediaUrl} className="mt-4" />
+                                ) : (
+                                  <div className="mt-4 rounded-xl overflow-hidden border bg-white p-2 shadow-sm">
+                                    <img src={p.mediaUrl} alt="Passage illustration" className="w-full h-auto object-contain mx-auto" />
+                                  </div>
+                                )
+                              ) : (
+                                <div 
+                                  className="text-base leading-relaxed font-serif text-foreground/90 passage-content bg-card p-6 rounded-xl border shadow-sm"
+                                  dangerouslySetInnerHTML={{ __html: p.content || '' }}
+                                />
+                              )
                             )}
                           </div>
                         ))}

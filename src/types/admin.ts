@@ -104,6 +104,7 @@ export interface Question {
   grammarTopic: string;
   difficulty: QuestionDifficulty;
   status: QuestionStatus;
+  metadata?: any;
   createdAt: string;
   updatedAt: string;
   examTitle: string;
@@ -119,6 +120,7 @@ export interface QuestionCreateBody {
   explanation: string;
   grammarTopic: string;
   difficulty: QuestionDifficulty;
+  metadata?: any;
   status?: QuestionStatus;
 }
 
@@ -130,15 +132,19 @@ export interface QuestionUpdateBody {
   explanation?: string;
   grammarTopic?: string;
   difficulty?: QuestionDifficulty;
+  metadata?: any;
   status?: QuestionStatus;
 }
+
+export type MediaType = 'TEXT' | 'AUDIO' | 'IMAGE' | 'VIDEO';
 
 export interface Passage {
   id: string;
   passageGroupId: string;
-  content: string;
+  content: string | null;
   order: number;
   mediaUrl?: string | null;
+  mediaType: MediaType;
 }
 
 export interface PassageGroup {
@@ -149,9 +155,10 @@ export interface PassageGroup {
 }
 
 export interface PassageCreateBody {
-  content: string;
+  content?: string;
   order: number;
   mediaUrl?: string;
+  mediaType?: MediaType;
 }
 
 export interface PassageGroupCreateBody {
@@ -163,7 +170,7 @@ export interface PassageGroupCreateBody {
 
 // ─── Exams ──────────────────────────────────────────────────────────────────
 
-export type ExamPart = 'PART5' | 'PART6' | 'PART7' | 'FULL';
+export type ExamPart = 'PART1' | 'PART2' | 'PART3' | 'PART4' | 'PART5' | 'PART6' | 'PART7' | 'FULL';
 export type ExamType = 'FREE' | 'VIP';
 
 export interface ExamCreateBody {

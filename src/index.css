@@ -298,3 +298,66 @@
   }
 }
 
+/* ---------- Quill Editor Customizations ---------- */
+.quill-editor-wrapper .ql-container.ql-snow {
+  border: none !important;
+  font-family: var(--font-sans) !important;
+  font-size: 0.875rem !important;
+}
+
+.quill-editor-wrapper .ql-toolbar.ql-snow {
+  border: none !important;
+  border-bottom: 1px solid rgb(var(--border)) !important;
+  background-color: rgb(var(--muted) / 0.5);
+  padding: 8px 12px !important;
+}
+
+.quill-editor-wrapper .ql-editor {
+  min-height: 120px;
+  line-height: 1.6;
+}
+
+.quill-editor-wrapper .ql-editor.ql-blank::before {
+  font-style: normal !important;
+  color: rgb(var(--muted-foreground)) !important;
+  opacity: 0.6;
+}
+
+/* Fix for Quill inside Radix Sheets/Dialogs */
+.ql-tooltip {
+  z-index: 1000 !important;
+}
+
+/* ---------- Passage Content Styling (Exam View) ---------- */
+.passage-content {
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.passage-content p {
+  margin-bottom: 0.75rem;
+}
+
+.passage-content p:last-child {
+  margin-bottom: 0;
+}
+
+.passage-content b, .passage-content strong {
+  font-weight: 700;
+  color: rgb(var(--foreground));
+}
+
+.passage-content i, .passage-content em {
+  font-style: italic;
+}
+
+.passage-content ul, .passage-content ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+  list-style: disc;
+}
+
+.passage-content li {
+  margin-bottom: 0.25rem;
+}
