@@ -26,8 +26,7 @@ import {
 import { adminApi } from '@/services/adminApi';
 import { toast } from 'sonner';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
+import { RichTextEditor } from '@/components/shared/RichTextEditor';
 
 interface ExamOption {
   id: string;
@@ -38,7 +37,6 @@ interface ExamOption {
 interface QuestionFormDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  /** Trả về data + flag isContinue để container quyết định đóng form hay không */
   onSave: (data: QuestionCreateBody, isContinue?: boolean) => Promise<void>;
   initialData?: any;
   exams: ExamOption[];
@@ -94,6 +92,11 @@ export function QuestionFormDialog({
 
   // Part 1, 2, 3, 4, 6 hoặc 7 đều cần nội dung đi kèm (Audio/Ảnh/Đoạn văn)
   const requiresPassage = ['PART1', 'PART2', 'PART3', 'PART4', 'PART6', 'PART7'].includes(selectedExamPart ?? '');
+
+  // Part 1, 2, 6 thường không có text câu hỏi riêng
+  const isQuestionTextOptional = useMemo(() => {
+    return ['PART1', 'PART2', 'PART6'].includes(selectedExamPart ?? '');
+  }, [selectedExamPart]);
 
   // ─── Khởi tạo form ────────────────────────────────────────────────────────
   // Tải danh sách Passage Groups khi examId thay đổi
@@ -296,20 +299,6 @@ export function QuestionFormDialog({
     }
   };
 
-  // ─── Validation ────────────────────────────────────────────────────────────
-  // Quill modules configuration
-  const quillModules = {
-    toolbar: [
-      ['bold', 'italic', 'underline'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      ['clean']
-    ],
-  };
-
-  const quillFormats = [
-    'bold', 'italic', 'underline',
-    'list', 'bullet'
-  ];
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -320,7 +309,9 @@ export function QuestionFormDialog({
       newErrors.passageGroupId = 'Vui lòng chọn cụm bài đọc';
     }
 
-    if (!questionText.trim()) newErrors.questionText = 'Câu hỏi không được để trống';
+    if (!isQuestionTextOptional && !questionText.trim()) {
+      newErrors.questionText = 'Câu hỏi không được để trống';
+    }
     if (!grammarTopic.trim()) newErrors.grammarTopic = 'Chủ đề ngữ pháp không được để trống';
     if (explanation.trim().length < 20)
       newErrors.explanation = 'Giải thích phải từ 20 ký tự trở lên';
@@ -601,26 +592,16 @@ export function QuestionFormDialog({
                               </div>
                             </div>
 
-                            <div className="space-y-1.5">
-                              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                Nội dung đoạn văn
-                              </Label>
-                              <div className="quill-editor-wrapper bg-white rounded-lg border border-input focus-within:ring-2 focus-within:ring-primary/20 transition-all overflow-hidden">
-                                <ReactQuill
-                                  theme="snow"
-                                  value={p.content}
-                                  onChange={(content) => {
-                                    const updated = [...newPassages];
-                                    updated[idx].content = content;
-                                    setNewPassages(updated);
-                                  }}
-                                  modules={quillModules}
-                                  formats={quillFormats}
-                                  placeholder="Nhập nội dung đoạn văn tại đây (hỗ trợ in đậm, in nghiêng, danh sách...)"
-                                  className="min-h-[150px]"
-                                />
-                              </div>
-                            </div>
+                              <RichTextEditor
+                                value={p.content}
+                                onChange={(content) => {
+                                  const updated = [...newPassages];
+                                  updated[idx].content = content;
+                                  setNewPassages(updated);
+                                }}
+                                placeholder="Nhập nội dung đoạn văn tại đây (hỗ trợ in đậm, in nghiêng, danh sách...)"
+                                minHeight="150px"
+                              />
                           </div>
                         ))}
                         
@@ -731,7 +712,12 @@ export function QuestionFormDialog({
                 {/* ── Câu hỏi ── */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">
-                    Câu hỏi <span className="text-red-500">*</span>
+                    Câu hỏi {!isQuestionTextOptional && <span className="text-red-500">*</span>}
+                    {isQuestionTextOptional && (
+                      <span className="text-xs text-muted-foreground font-normal ml-2">
+                        (Tùy chọn cho {selectedExamPart})
+                      </span>
+                    )}
                   </Label>
                   <textarea
                     className={`flex w-full rounded-lg border bg-background px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 min-h-[100px] resize-y transition-all ${
@@ -739,7 +725,7 @@ export function QuestionFormDialog({
                         ? 'border-red-500 ring-2 ring-red-200'
                         : 'border-input hover:border-primary/50 focus-visible:ring-primary'
                     }`}
-                    placeholder="Nhập nội dung câu hỏi..."
+                    placeholder={isQuestionTextOptional ? `Nội dung câu hỏi (Có thể để trống cho ${selectedExamPart})...` : "Nhập nội dung câu hỏi..."}
                     value={questionText}
                     onChange={(e) => { setQuestionText(e.target.value); clearError('questionText'); }}
                   />
@@ -889,29 +875,14 @@ export function QuestionFormDialog({
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">
-                    Giải thích <span className="text-red-500">*</span>
-                    <span className="text-xs text-muted-foreground font-normal ml-2">
-                      ({explanation.length}/20 ký tự tối thiểu)
-                    </span>
-                  </Label>
-                  <textarea
-                    className={`flex w-full rounded-lg border bg-background px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 min-h-[120px] resize-y transition-all ${
-                      errors.explanation
-                        ? 'border-red-500 ring-2 ring-red-200'
-                        : 'border-input hover:border-primary/50 focus-visible:ring-primary'
-                    }`}
-                    placeholder="Giải thích chi tiết tại sao đáp án này đúng, phân tích cấu trúc ngữ pháp, từ vựng..."
-                    value={explanation}
-                    onChange={(e) => { setExplanation(e.target.value); clearError('explanation'); }}
-                  />
-                  {errors.explanation && (
-                    <p className="text-xs text-red-500 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" /> {errors.explanation}
-                    </p>
-                  )}
-                </div>
+                <RichTextEditor
+                  label="Giải thích *"
+                  value={explanation}
+                  onChange={(val) => { setExplanation(val); clearError('explanation'); }}
+                  placeholder="Giải thích chi tiết tại sao đáp án này đúng, phân tích cấu trúc ngữ pháp, từ vựng..."
+                  error={errors.explanation}
+                  minHeight="120px"
+                />
               </div>
             </div>
           )}

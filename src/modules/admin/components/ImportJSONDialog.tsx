@@ -48,7 +48,7 @@ const formatZodError = (issue: z.ZodIssue) => {
 const questionSchema = z.object({
   examId: z.string(),
   order: z.number(),
-  questionText: z.string().min(1, 'Nội dung câu hỏi không được để trống'),
+  questionText: z.string().optional().nullable(),
   options: z
     .array(
       z.object({
@@ -73,7 +73,7 @@ const passageGroupSchema = z.object({
   examId: z.string(),
   order: z.number(),
   passages: z.array(z.object({
-    content: z.string().min(1),
+    content: z.string().optional().nullable(),
     order: z.number(),
     mediaUrl: z.string().optional(),
   })).min(1),

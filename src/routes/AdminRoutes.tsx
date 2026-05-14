@@ -7,12 +7,8 @@ import SubscriptionManagerPage from '@/modules/admin/pages/SubscriptionManagerPa
 import QuestionBankPage from '@/modules/admin/pages/QuestionBankPage';
 import ExamManagementPage from '@/modules/admin/pages/ExamManagementPage';
 import AdminNotificationsPage from '@/modules/admin/pages/AdminNotificationsPage';
+import TrashManagerPage from '@/modules/admin/pages/TrashManagerPage';
 
-/**
- * Admin Routes
- * ProtectedRoute (requiredRole="ADMIN") bọc ngoài → render Outlet khi hợp lệ
- * AdminLayout là element của route con ngay trong → render Outlet cho pages
- */
 function AdminRoutes() {
   return (
     // Layer 1: Guard — chỉ ADMIN mới vào được
@@ -27,6 +23,7 @@ function AdminRoutes() {
         <Route path="questions" element={<QuestionBankPage />} />
         <Route path="exams" element={<ExamManagementPage />} />
         <Route path="notifications" element={<AdminNotificationsPage />} />
+        <Route path="trash" element={<TrashManagerPage />} />
       </Route>
     </Route>
   );

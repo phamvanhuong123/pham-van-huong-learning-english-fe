@@ -103,6 +103,26 @@ export const adminApi = {
     await api.delete(`/admin/questions/${id}`);
   },
 
+  restoreQuestion: async (id: string) => {
+    await api.patch(`/admin/questions/${id}/restore`);
+  },
+
+  hardDeleteQuestion: async (id: string) => {
+    await api.delete(`/admin/questions/${id}/hard`);
+  },
+
+  bulkDeleteQuestions: async (ids: string[]) => {
+    await api.post('/admin/questions/bulk-delete', { ids });
+  },
+
+  bulkRestoreQuestions: async (ids: string[]) => {
+    await api.post('/admin/questions/bulk-restore', { ids });
+  },
+
+  bulkHardDeleteQuestions: async (ids: string[]) => {
+    await api.post('/admin/questions/bulk-hard', { ids });
+  },
+
   getExams: async (): Promise<AdminExamsResponse> => {
     const { data } = await api.get<AdminExamsResponse>('/admin/exams');
     return data;
@@ -115,6 +135,35 @@ export const adminApi = {
 
   updateExam: async ({ id, body }: { id: string; body: ExamUpdateBody }) => {
     const { data } = await api.patch(`/admin/exams/${id}`, body);
+    return data;
+  },
+
+  deleteExam: async (id: string) => {
+    await api.delete(`/admin/exams/${id}`);
+  },
+
+  restoreExam: async (id: string) => {
+    await api.patch(`/admin/exams/${id}/restore`);
+  },
+
+  hardDeleteExam: async (id: string) => {
+    await api.delete(`/admin/exams/${id}/hard`);
+  },
+
+  bulkDeleteExams: async (ids: string[]) => {
+    await api.post('/admin/exams/bulk-delete', { ids });
+  },
+
+  bulkRestoreExams: async (ids: string[]) => {
+    await api.post('/admin/exams/bulk-restore', { ids });
+  },
+
+  bulkHardDeleteExams: async (ids: string[]) => {
+    await api.post('/admin/exams/bulk-hard', { ids });
+  },
+
+  getTrash: async (): Promise<any> => {
+    const { data } = await api.get('/admin/trash');
     return data;
   },
 

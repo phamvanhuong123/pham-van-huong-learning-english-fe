@@ -102,9 +102,10 @@ export function NotificationBell() {
                       <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2">
-                    {notification.body}
-                  </p>
+                  <div 
+                    className="text-xs text-muted-foreground line-clamp-2 notification-content break-normal [word-break:normal] [overflow-wrap:anywhere] w-full"
+                    dangerouslySetInnerHTML={{ __html: notification.body }}
+                  />
                   <p className="text-[10px] text-muted-foreground mt-1">
                     {toRelativeTime(notification.createdAt)}
                   </p>

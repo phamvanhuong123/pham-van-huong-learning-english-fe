@@ -25,13 +25,13 @@ export function QuestionBankContainer() {
   const [difficulty, setDifficulty] = useState('ALL');
   const [status, setStatus] = useState('ALL');
 
-  // Modal states
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<any>(null);
   const [deletingQuestion, setDeletingQuestion] = useState<any>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
 
-  // Debounce search
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
@@ -86,13 +86,29 @@ export function QuestionBankContainer() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminApi.deleteQuestion(id),
     onSuccess: () => {
-      toast.success('Đã xóa câu hỏi');
+      toast.success('Đã chuyển câu hỏi vào thùng rác');
       queryClient.invalidateQueries({ queryKey: ['admin', 'questions'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'trash'] });
       setDeletingQuestion(null);
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Không thể xóa câu hỏi này vì đã có dữ liệu thi');
       setDeletingQuestion(null);
+    },
+  });
+
+  const { mutate: bulkDelete } = useMutation({
+    mutationFn: (ids: string[]) => adminApi.bulkDeleteQuestions(ids),
+    onSuccess: (res: any) => {
+      toast.success(res.message || 'Đã xóa hàng loạt');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'questions'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'trash'] });
+      setSelectedIds([]);
+      setIsBulkDeleteOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Lỗi xóa hàng loạt');
+      setIsBulkDeleteOpen(false);
     },
   });
 
@@ -188,7 +204,7 @@ export function QuestionBankContainer() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 relative">
         <QuestionTable
           questions={questionsData?.questions || questionsData?.data || []}
           isLoading={isLoading}
@@ -197,7 +213,36 @@ export function QuestionBankContainer() {
             setIsFormOpen(true);
           }}
           onDelete={(q) => setDeletingQuestion(q)}
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
         />
+
+        {/* Floating Bulk Actions Bar */}
+        {selectedIds.length > 0 && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-foreground text-background px-6 py-3 rounded-full shadow-2xl flex items-center gap-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <span className="text-sm font-bold border-r border-background/20 pr-6">
+              Đã chọn {selectedIds.length} câu
+            </span>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 text-background hover:bg-background/10 hover:text-background"
+                onClick={() => setSelectedIds([])}
+              >
+                Hủy
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                className="h-8 font-bold"
+                onClick={() => setIsBulkDeleteOpen(true)}
+              >
+                Xóa tất cả
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Pagination & Limit Selector */}
@@ -274,7 +319,17 @@ export function QuestionBankContainer() {
         onConfirm={() => deletingQuestion && deleteMutation.mutate(deletingQuestion.id)}
         isLoading={deleteMutation.isPending}
         title="Xác nhận xóa câu hỏi?"
-        description="Bạn có chắc chắn muốn xóa câu hỏi này không? Nếu câu hỏi đã được người dùng làm bài, hệ thống sẽ chặn hành động xóa để đảm bảo toàn vẹn dữ liệu."
+        description="Câu hỏi sẽ được chuyển vào Thùng rác. Bạn có thể khôi phục lại sau này nếu cần."
+      />
+
+      {/* Bulk Delete Confirmation */}
+      <DeleteConfirmDialog
+        open={isBulkDeleteOpen}
+        onOpenChange={setIsBulkDeleteOpen}
+        onConfirm={() => bulkDelete(selectedIds)}
+        isLoading={false}
+        title="Xóa hàng loạt?"
+        description={`Bạn có chắc muốn chuyển ${selectedIds.length} câu hỏi đã chọn vào thùng rác?`}
       />
     </div>
   );

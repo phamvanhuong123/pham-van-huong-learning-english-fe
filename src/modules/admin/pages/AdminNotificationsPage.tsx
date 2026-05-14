@@ -41,6 +41,8 @@ import {
 import { Bell, Send, Users, Trash2, Calendar, History as HistoryIcon } from 'lucide-react';
 import { toRelativeTime } from '@/utils/relativeTime';
 import { Badge } from '@/components/ui/badge';
+import { RichTextEditor } from '@/components/shared/RichTextEditor';
+import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 
 const broadcastSchema = z.object({
   title: z.string().min(5, 'Tiêu đề phải có ít nhất 5 ký tự'),
@@ -52,6 +54,7 @@ type BroadcastFormValues = z.infer<typeof broadcastSchema>;
 
 export default function AdminNotificationsPage() {
   const [loading, setLoading] = React.useState(false);
+  const [deletingBroadcastId, setDeletingBroadcastId] = React.useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const form = useForm<BroadcastFormValues>({
@@ -75,9 +78,11 @@ export default function AdminNotificationsPage() {
     onSuccess: () => {
       toast.success('Đã xóa đợt thông báo thành công');
       queryClient.invalidateQueries({ queryKey: ['admin', 'broadcasts'] });
+      setDeletingBroadcastId(null);
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Không thể xóa đợt thông báo');
+      setDeletingBroadcastId(null);
     },
   });
 
@@ -176,17 +181,14 @@ export default function AdminNotificationsPage() {
                     control={form.control}
                     name="body"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nội dung</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Nội dung chi tiết..." 
-                            className="min-h-[100px] bg-background/50 resize-none"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                      <RichTextEditor
+                        label="Nội dung"
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Nội dung chi tiết..."
+                        error={form.formState.errors.body?.message}
+                        minHeight="150px"
+                      />
                     )}
                   />
 
@@ -257,11 +259,7 @@ export default function AdminNotificationsPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => {
-                                if (window.confirm('Bạn có chắc muốn xóa đợt thông báo này? Hành động này sẽ xóa thông báo khỏi hộp thư của tất cả người dùng liên quan.')) {
-                                  deleteMutation.mutate(b.id);
-                                }
-                              }}
+                              onClick={() => setDeletingBroadcastId(b.id)}
                               disabled={deleteMutation.isPending}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -282,6 +280,14 @@ export default function AdminNotificationsPage() {
           </Card>
         </div>
       </div>
+      <DeleteConfirmDialog
+        open={!!deletingBroadcastId}
+        onOpenChange={(open) => !open && setDeletingBroadcastId(null)}
+        onConfirm={() => deletingBroadcastId && deleteMutation.mutate(deletingBroadcastId)}
+        isLoading={deleteMutation.isPending}
+        title="Xóa đợt thông báo?"
+        description="Hành động này sẽ xóa thông báo khỏi hộp thư của tất cả người dùng liên quan. Bạn không thể hoàn tác."
+      />
     </div>
   );
 }

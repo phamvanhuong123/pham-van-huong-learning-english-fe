@@ -8,9 +8,10 @@ interface QuestionPaletteProps {
   questions: Question[];
   examId: string;
   onNavigate?: () => void; // Dùng để đóng Sheet trên mobile
+  onQuestionClick?: (questionId: string) => void;
 }
 
-export const QuestionPalette: React.FC<QuestionPaletteProps> = ({ questions, examId, onNavigate }) => {
+export const QuestionPalette: React.FC<QuestionPaletteProps> = ({ questions, examId, onNavigate, onQuestionClick }) => {
   const session = useExamStore((state) => state.sessions[examId]);
   
   const answers = session?.answers || {};
@@ -20,16 +21,24 @@ export const QuestionPalette: React.FC<QuestionPaletteProps> = ({ questions, exa
   const bookmarkCount = bookmarks.length;
 
   const handleScrollToQuestion = (questionId: string) => {
+    // Gọi callback nếu có
+    if (onQuestionClick) {
+      onQuestionClick(questionId);
+    }
+
     // Mobile: Đóng Sheet trước
     if (onNavigate) {
       onNavigate();
     }
 
     // Scroll mượt đến câu hỏi
-    const element = document.getElementById(`question-${questionId}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    // Timeout nhỏ để đảm bảo component đã được render nếu có chuyển Part/Tab
+    setTimeout(() => {
+      const element = document.getElementById(`question-${questionId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
   };
 
   return (
@@ -52,12 +61,12 @@ export const QuestionPalette: React.FC<QuestionPaletteProps> = ({ questions, exa
               key={q.id}
               onClick={() => handleScrollToQuestion(q.id)}
               className={cn(
-                "w-8 h-8 rounded-[6px] text-xs font-semibold flex items-center justify-center transition-all relative",
-                // Trạng thái mặc định
+                "w-9 h-9 rounded-md text-xs font-bold flex items-center justify-center transition-all relative",
+      
                 "bg-muted text-muted-foreground hover:ring-2 hover:ring-primary/50",
-                // Trạng thái đã trả lời
+           
                 isAnswered && "bg-primary text-primary-foreground",
-                // Trạng thái đã bookmark (Ưu tiên hiển thị viền vàng)
+            
                 isBookmarked && "bg-muted text-muted-foreground border-2 border-yellow-400"
               )}
             >

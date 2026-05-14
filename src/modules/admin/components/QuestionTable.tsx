@@ -9,6 +9,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 import type { Question } from '@/types/admin';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -17,9 +19,28 @@ interface QuestionTableProps {
   isLoading?: boolean;
   onEdit: (q: Question) => void;
   onDelete: (q: Question) => void;
+  selectedIds?: string[];
+  onSelectionChange?: (ids: string[]) => void;
 }
 
-export function QuestionTable({ questions, isLoading, onEdit, onDelete }: QuestionTableProps) {
+export function QuestionTable({ questions, isLoading, onEdit, onDelete, selectedIds = [], onSelectionChange }: QuestionTableProps) {
+  const toggleAll = () => {
+    if (!onSelectionChange) return;
+    if (selectedIds.length === questions.length) {
+      onSelectionChange([]);
+    } else {
+      onSelectionChange(questions.map(q => q.id));
+    }
+  };
+
+  const toggleOne = (id: string) => {
+    if (!onSelectionChange) return;
+    if (selectedIds.includes(id)) {
+      onSelectionChange(selectedIds.filter(i => i !== id));
+    } else {
+      onSelectionChange([...selectedIds, id]);
+    }
+  };
   console.log(questions)
   if (isLoading) {
     return (
@@ -43,6 +64,12 @@ export function QuestionTable({ questions, isLoading, onEdit, onDelete }: Questi
         <Table>
           <TableHeader className="bg-muted/80 backdrop-blur-sm sticky top-0 z-10 border-b border-border shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
             <TableRow className="hover:bg-transparent border-none">
+              <TableHead className="w-[40px] h-12">
+                <Checkbox 
+                  checked={questions.length > 0 && selectedIds.length === questions.length}
+                  onCheckedChange={toggleAll}
+                />
+              </TableHead>
               <TableHead className="w-[100px] h-12 font-semibold">ID / #</TableHead>
               <TableHead className="min-w-[300px] h-12 font-semibold text-foreground">Đề thi / Part</TableHead>
               <TableHead className="h-12 font-semibold text-foreground">Chủ đề</TableHead>
@@ -53,7 +80,16 @@ export function QuestionTable({ questions, isLoading, onEdit, onDelete }: Questi
           </TableHeader>
           <TableBody>
             {questions.map((q) => (
-              <TableRow key={q.id} className="group hover:bg-muted/40 transition-colors border-b border-border/50">
+              <TableRow key={q.id} className={cn(
+                "group hover:bg-muted/40 transition-colors border-b border-border/50",
+                selectedIds.includes(q.id) && "bg-primary/5"
+              )}>
+                <TableCell className="py-4">
+                  <Checkbox 
+                    checked={selectedIds.includes(q.id)}
+                    onCheckedChange={() => toggleOne(q.id)}
+                  />
+                </TableCell>
                 <TableCell className="py-4">
                   <div className="flex flex-col">
                     <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">{q.id.substring(0, 6)}</span>

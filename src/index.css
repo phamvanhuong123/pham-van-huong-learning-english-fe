@@ -258,6 +258,35 @@
   a:hover {
     color: rgb(var(--primary) / 0.8);
   }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--secondary) / 0.3) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 2px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--secondary) / 0.2);
+    border-radius: 100px;
+    transition: background-color 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(var(--secondary) / 0.5);
+  }
+
+  /* Optional: Show more prominent thumb on active/focus */
+  ::-webkit-scrollbar-thumb:active {
+    background-color: rgb(var(--primary) / 0.6);
+  }
 }
 
 /* ---------- Utility Overrides / Custom Classes ---------- */

@@ -105,9 +105,10 @@ export function QuestionPreview({ question }: QuestionPreviewProps) {
         {question.explanation && (
           <div className="mt-4 pt-4 border-t border-border">
             <div className="text-sm font-semibold text-primary mb-2">Giải thích:</div>
-            <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-              {question.explanation}
-            </div>
+            <div 
+              className="text-sm text-muted-foreground leading-relaxed explanation-content break-normal [word-break:normal] [overflow-wrap:anywhere] w-full"
+              dangerouslySetInnerHTML={{ __html: question.explanation }}
+            />
           </div>
         )}
       </div>
