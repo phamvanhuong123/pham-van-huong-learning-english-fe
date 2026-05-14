@@ -5,6 +5,7 @@ import type {
   UserUpdateBody,
   AdminSubscriptionsResponse,
   SubscriptionUpdateBody,
+  AdminQuestionsResponse,
   QuestionCreateBody,
   QuestionUpdateBody,
   AdminExamsResponse,
@@ -13,6 +14,12 @@ import type {
   PassageGroup,
   PassageGroupCreateBody,
 } from '@/types/admin';
+import type { 
+  Vocab, 
+  VocabCreateBody, 
+  VocabUpdateBody,
+  BulkImportResult
+} from '@/types/vocab';
 
 export const adminApi = {
   uploadMedia: async (file: File): Promise<{ url: string }> => {
@@ -84,42 +91,42 @@ export const adminApi = {
 
   // ─── Questions ─────────────────────────────────────────────────────────────
 
-  getQuestions: async (params?: any) => {
-    const { data } = await api.get('/admin/questions', { params });
-    return data;
+  getQuestions: async (params?: any): Promise<AdminQuestionsResponse> => {
+    const { data } = await api.get<AdminQuestionsResponse>('/admin/questions', { params });
+      return data;
   },
 
-  createQuestion: async (body: QuestionCreateBody) => {
+  createQuestion: async (body: QuestionCreateBody): Promise<any> => {
     const { data } = await api.post('/admin/questions', body);
     return data;
   },
 
-  updateQuestion: async ({ id, body }: { id: string; body: QuestionUpdateBody }) => {
+  updateQuestion: async ({ id, body }: { id: string; body: QuestionUpdateBody }): Promise<any> => {
     const { data } = await api.patch(`/admin/questions/${id}`, body);
     return data;
   },
 
-  deleteQuestion: async (id: string) => {
+  deleteQuestion: async (id: string): Promise<void> => {
     await api.delete(`/admin/questions/${id}`);
   },
 
-  restoreQuestion: async (id: string) => {
+  restoreQuestion: async (id: string): Promise<void> => {
     await api.patch(`/admin/questions/${id}/restore`);
   },
 
-  hardDeleteQuestion: async (id: string) => {
+  hardDeleteQuestion: async (id: string): Promise<void> => {
     await api.delete(`/admin/questions/${id}/hard`);
   },
 
-  bulkDeleteQuestions: async (ids: string[]) => {
+  bulkDeleteQuestions: async (ids: string[]): Promise<void> => {
     await api.post('/admin/questions/bulk-delete', { ids });
   },
 
-  bulkRestoreQuestions: async (ids: string[]) => {
+  bulkRestoreQuestions: async (ids: string[]): Promise<void> => {
     await api.post('/admin/questions/bulk-restore', { ids });
   },
 
-  bulkHardDeleteQuestions: async (ids: string[]) => {
+  bulkHardDeleteQuestions: async (ids: string[]): Promise<void> => {
     await api.post('/admin/questions/bulk-hard', { ids });
   },
 
@@ -128,37 +135,37 @@ export const adminApi = {
     return data;
   },
 
-  createExam: async (body: ExamCreateBody) => {
+  createExam: async (body: ExamCreateBody): Promise<any> => {
     const { data } = await api.post('/admin/exams', body);
     return data;
   },
 
-  updateExam: async ({ id, body }: { id: string; body: ExamUpdateBody }) => {
+  updateExam: async ({ id, body }: { id: string; body: ExamUpdateBody }): Promise<any> => {
     const { data } = await api.patch(`/admin/exams/${id}`, body);
     return data;
   },
 
-  deleteExam: async (id: string) => {
+  deleteExam: async (id: string): Promise<void> => {
     await api.delete(`/admin/exams/${id}`);
   },
 
-  restoreExam: async (id: string) => {
+  restoreExam: async (id: string): Promise<void> => {
     await api.patch(`/admin/exams/${id}/restore`);
   },
 
-  hardDeleteExam: async (id: string) => {
+  hardDeleteExam: async (id: string): Promise<void> => {
     await api.delete(`/admin/exams/${id}/hard`);
   },
 
-  bulkDeleteExams: async (ids: string[]) => {
+  bulkDeleteExams: async (ids: string[]): Promise<void> => {
     await api.post('/admin/exams/bulk-delete', { ids });
   },
 
-  bulkRestoreExams: async (ids: string[]) => {
+  bulkRestoreExams: async (ids: string[]): Promise<void> => {
     await api.post('/admin/exams/bulk-restore', { ids });
   },
 
-  bulkHardDeleteExams: async (ids: string[]) => {
+  bulkHardDeleteExams: async (ids: string[]): Promise<void> => {
     await api.post('/admin/exams/bulk-hard', { ids });
   },
 
@@ -179,5 +186,30 @@ export const adminApi = {
 
   deleteBroadcast: async (id: string): Promise<void> => {
     await api.delete(`/admin/notifications/broadcasts/${id}`);
+  },
+
+  // ─── Vocabulary ────────────────────────────────────────────────────────────
+  getVocabs: async (params: { topic?: string; search?: string; page?: number; limit?: number }): Promise<{ vocabs: Vocab[]; total: number }> => {
+    const { data } = await api.get('/admin/vocab', { params });
+    return data;
+  },
+  createVocab: async (body: VocabCreateBody): Promise<Vocab> => {
+    const { data } = await api.post<Vocab>('/admin/vocab', body);
+    return data;
+  },
+  updateVocab: async ({ id, body }: { id: string; body: VocabUpdateBody }): Promise<Vocab> => {
+    const { data } = await api.patch<Vocab>(`/admin/vocab/${id}`, body);
+    return data;
+  },
+  deleteVocab: async (id: string): Promise<void> => {
+    await api.delete(`/admin/vocab/${id}`);
+  },
+  bulkImportVocab: async (file: File): Promise<BulkImportResult> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await api.post<BulkImportResult>('/admin/vocab/bulk-import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
   },
 };

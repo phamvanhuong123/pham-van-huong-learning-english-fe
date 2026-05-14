@@ -20,6 +20,7 @@ export function Header() {
     { label: 'Luyện đề', to: '/exams', icon: Library },
     { label: 'Lịch sử', to: '/history', icon: History },
     { label: 'Từ vựng', to: '/vocab', icon: BookOpen },
+    { label: 'Ngữ pháp', to: '/grammar', icon: Library },
     { label: 'Phân tích', to: '/analytics', icon: BarChart3 },
   ];
 

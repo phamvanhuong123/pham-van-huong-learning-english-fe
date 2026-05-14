@@ -13,6 +13,8 @@ import {
   LogOut,
   FileText,
   Trash2,
+  Book,
+  BookMarked,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +40,8 @@ const NAV_ITEMS: NavItem[] = [
   },
   { label: 'Quản lý đề thi', to: '/admin/exams', icon: <FileText className="w-4 h-4" /> },
   { label: 'Ngân hàng câu hỏi', to: '/admin/questions', icon: <BookOpen className="w-4 h-4" /> },
+  { label: 'Thư viện từ vựng', to: '/admin/vocab', icon: <Book className="w-4 h-4" /> },
+  { label: 'Quản lý ngữ pháp', to: '/admin/grammar', icon: <BookMarked className="w-4 h-4" /> },
   { label: 'Thông báo', to: '/admin/notifications', icon: <Bell className="w-4 h-4" /> },
   { label: 'Thùng rác', to: '/admin/trash', icon: <Trash2 className="w-4 h-4" /> },
 ];

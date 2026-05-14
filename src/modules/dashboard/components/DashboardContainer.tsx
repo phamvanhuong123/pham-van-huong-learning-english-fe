@@ -9,6 +9,7 @@ import { VocabDueCard } from './VocabDueCard';
 import { AccuracyByPartSection } from './AccuracyByPartSection';
 import { RecentResults } from './RecentResults';
 import { DashboardEmptyState } from './DashboardEmptyState';
+import { GrammarPracticeCard } from './GrammarPracticeCard';
 import { useAuthStore } from '@/modules/auth/store/useAuthStore';
 import api from '@/lib/axios';
 
@@ -147,6 +148,11 @@ export function DashboardContainer() {
             </section>
           )}
 
+          {/* Grammar Practice Card */}
+          <section aria-label="Luyện tập ngữ pháp">
+            <GrammarPracticeCard />
+          </section>
+
           {/* Accuracy By Part */}
           <section aria-label="Accuracy theo Part">
             <AccuracyByPartSection accuracyByPart={stats.accuracyByPart} />
@@ -165,6 +171,11 @@ export function DashboardContainer() {
               <VocabDueCard vocabDueToday={stats.vocabDueToday} />
             </section>
           )}
+
+          {/* Grammar Practice Card */}
+          <section aria-label="Luyện tập ngữ pháp">
+            <GrammarPracticeCard />
+          </section>
 
           {/* Empty state */}
           <section aria-label="Trạng thái trống">

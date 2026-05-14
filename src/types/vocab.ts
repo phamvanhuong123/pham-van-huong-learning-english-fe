@@ -1,8 +1,6 @@
-// ─── SM-2 Status ──────────────────────────────────────────────────────────────
 export type SM2Status = 'NEW' | 'LEARNING' | 'REVIEW' | 'MASTERED';
 export type SM2Rating = 0 | 1 | 2 | 3; // Again | Hard | Good | Easy
 
-// ─── Domain Types ─────────────────────────────────────────────────────────────
 export interface VocabSchedule {
   id: string;
   status: SM2Status;
@@ -14,15 +12,17 @@ export interface VocabSchedule {
 
 export interface Vocab {
   id: string;
+  userId?: string | null;
   word: string;
   meaning: string;
+  phonetic?: string | null;
+  audioUrl?: string | null;
   example?: string | null;
   topic?: string | null;
   createdAt: string; // ISO string
   schedule: VocabSchedule | null;
 }
 
-// ─── API Response Types ───────────────────────────────────────────────────────
 export interface VocabLimitInfo {
   used: number;
   max: number | null;        // null = VIP (unlimited)
@@ -38,7 +38,7 @@ export interface GetVocabsResponse {
 export interface BulkImportResult {
   imported: number;
   skipped: number;
-  skippedWords: string[];
+  errors: string[];
 }
 
 export interface ReviewResult {
@@ -47,7 +47,6 @@ export interface ReviewResult {
   status: SM2Status;
 }
 
-// ─── Filter / Query Types ─────────────────────────────────────────────────────
 export interface VocabFilter {
   status?: SM2Status | '';
   topic?: string;
@@ -56,7 +55,6 @@ export interface VocabFilter {
   limit?: number;
 }
 
-// ─── CSV Import types ─────────────────────────────────────────────────────────
 export interface CSVVocabRow {
   word: string;
   meaning: string;
@@ -79,4 +77,15 @@ export interface FlashcardSession {
   summary: SessionSummary;
   isFinished: boolean;
 }
+
+export interface VocabCreateBody {
+  word: string;
+  meaning: string;
+  phonetic?: string | null;
+  audioUrl?: string | null;
+  example?: string | null;
+  topic?: string | null;
+}
+
+export interface VocabUpdateBody extends Partial<VocabCreateBody> {}
 

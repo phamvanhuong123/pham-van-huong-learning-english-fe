@@ -21,12 +21,14 @@ import type { QuestionCreateBody, QuestionDifficulty, OptionLabel } from '@/type
 import {
   Pencil, Sparkles, ArrowLeft, EyeOff, Eye, Save, Loader2,
   CheckCircle2, Info, ListChecks, Settings2, Check, PlusCircle,
-  AlertCircle, FileText, Upload, Trash2,
+  AlertCircle, FileText, Upload, Trash2, Library, BookOpen
 } from 'lucide-react';
 import { adminApi } from '@/services/adminApi';
+import { fetchGrammarTopics } from '@/services/grammarApi';
 import { toast } from 'sonner';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { RichTextEditor } from '@/components/shared/RichTextEditor';
+import { stripHtml } from '@/utils/string';
 
 interface ExamOption {
   id: string;
@@ -58,6 +60,7 @@ export function QuestionFormDialog({
   exams,
   isPending,
 }: QuestionFormDialogProps) {
+  const [questionType, setQuestionType] = useState<'EXAM' | 'BANK'>('EXAM');
   const [examId, setExamId] = useState('');
   const [order, setOrder] = useState<number>(1);
   const [passageGroupId, setPassageGroupId] = useState('');
@@ -66,6 +69,8 @@ export function QuestionFormDialog({
   const [questionText, setQuestionText] = useState('');
   const [options, setOptions] = useState(BLANK_OPTIONS());
   const [grammarTopic, setGrammarTopic] = useState('');
+  const [grammarTopicId, setGrammarTopicId] = useState('');
+  const [grammarTopics, setGrammarTopics] = useState<any[]>([]);
   const [difficulty, setDifficulty] = useState<QuestionDifficulty>('EASY');
   const [explanation, setExplanation] = useState('');
   const [metadata, setMetadata] = useState<any>({ hideQuestionText: false, hideOptionsText: false });
@@ -99,7 +104,6 @@ export function QuestionFormDialog({
   }, [selectedExamPart]);
 
   // ─── Khởi tạo form ────────────────────────────────────────────────────────
-  // Tải danh sách Passage Groups khi examId thay đổi
   useEffect(() => {
     if (examId && requiresPassage) {
       setIsLoadingGroups(true);
@@ -110,11 +114,18 @@ export function QuestionFormDialog({
     } else {
       setPassageGroups([]);
     }
-  }, [examId, selectedExamPart, requiresPassage]);
+  }, [examId, requiresPassage]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchGrammarTopics().then(setGrammarTopics).catch(() => setGrammarTopics([]));
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
+        setQuestionType(initialData.examId ? 'EXAM' : 'BANK');
         setExamId(initialData.examId || '');
         setOrder(initialData.order || 1);
         setPassageGroupId(initialData.passageGroupId || '');
@@ -123,16 +134,19 @@ export function QuestionFormDialog({
           initialData.options?.length === 4 ? initialData.options : BLANK_OPTIONS(),
         );
         setGrammarTopic(initialData.grammarTopic || '');
+        setGrammarTopicId(initialData.grammarTopicId || '');
         setDifficulty(initialData.difficulty || 'EASY');
         setExplanation(initialData.explanation || '');
         setMetadata(initialData.metadata || { hideQuestionText: false, hideOptionsText: false });
       } else {
+        setQuestionType('EXAM');
         setExamId('');
         setOrder(1);
         setPassageGroupId('');
         setQuestionText('');
         setOptions(BLANK_OPTIONS());
         setGrammarTopic('');
+        setGrammarTopicId('');
         setDifficulty('EASY');
         setExplanation('');
         setMetadata({ hideQuestionText: false, hideOptionsText: false });
@@ -302,17 +316,19 @@ export function QuestionFormDialog({
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!examId) newErrors.examId = 'Vui lòng chọn đề thi';
+    if (questionType === 'EXAM' && !examId) newErrors.examId = 'Vui lòng chọn đề thi';
 
     // Bắt buộc passage nếu là PART6/PART7
-    if (requiresPassage && !passageGroupId) {
+    if (questionType === 'EXAM' && requiresPassage && !passageGroupId) {
       newErrors.passageGroupId = 'Vui lòng chọn cụm bài đọc';
     }
 
     if (!isQuestionTextOptional && !questionText.trim()) {
       newErrors.questionText = 'Câu hỏi không được để trống';
     }
-    if (!grammarTopic.trim()) newErrors.grammarTopic = 'Chủ đề ngữ pháp không được để trống';
+    if (!grammarTopicId && !grammarTopic.trim()) {
+      newErrors.grammarTopicId = 'Vui lòng chọn chủ đề ngữ pháp';
+    }
     if (explanation.trim().length < 20)
       newErrors.explanation = 'Giải thích phải từ 20 ký tự trở lên';
     if (options.some((o) => !o.text.trim()))
@@ -329,13 +345,14 @@ export function QuestionFormDialog({
     if (!validate()) return;
     await onSave(
       {
-        examId,
+        examId: questionType === 'EXAM' ? examId : null,
         order,
-        passageGroupId: requiresPassage ? (passageGroupId || undefined) : undefined,
+        passageGroupId: (questionType === 'EXAM' && requiresPassage) ? (passageGroupId || undefined) : undefined,
         questionText,
         options,
         explanation,
-        grammarTopic,
+        grammarTopic: grammarTopic || undefined,
+        grammarTopicId: grammarTopicId || undefined,
         difficulty,
         metadata,
         status,
@@ -424,14 +441,36 @@ export function QuestionFormDialog({
                   <Info className="w-5 h-5" /> Thông tin cơ bản
                 </h3>
 
+                <div className="flex gap-2 p-1 bg-muted rounded-lg mb-4">
+                  <Button
+                    type="button"
+                    variant={questionType === 'EXAM' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="flex-1 h-9"
+                    onClick={() => setQuestionType('EXAM')}
+                  >
+                    <BookOpen className="w-4 h-4 mr-2" /> Câu hỏi đề thi
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={questionType === 'BANK' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="flex-1 h-9"
+                    onClick={() => setQuestionType('BANK')}
+                  >
+                    <Library className="w-4 h-4 mr-2" /> Ngân hàng ngữ pháp
+                  </Button>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                  <div className="sm:col-span-8 lg:col-span-9 space-y-2">
+                  <div className={`sm:col-span-8 lg:col-span-9 space-y-2 ${questionType === 'BANK' ? 'opacity-50 pointer-events-none' : ''}`}>
                     <Label className="text-sm font-medium">
                       Đề thi <span className="text-red-500">*</span>
                     </Label>
                     <Select
                       value={examId}
                       onValueChange={(val) => { setExamId(val); clearError('examId'); }}
+                      disabled={questionType === 'BANK'}
                     >
                       <SelectTrigger
                         className={`w-full transition-all ${errors.examId ? 'border-red-500 ring-2 ring-red-200' : 'hover:border-primary/50'}`}
@@ -472,8 +511,7 @@ export function QuestionFormDialog({
                   </div>
                 </div>
 
-                {/* ── Nhóm bài đọc — chỉ hiện khi PART6/PART7 ── */}
-                {requiresPassage ? (
+                {questionType === 'EXAM' && requiresPassage ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-semibold flex items-center gap-2">
@@ -841,15 +879,24 @@ export function QuestionFormDialog({
                     <Label className="text-sm font-medium">
                       Chủ đề ngữ pháp <span className="text-red-500">*</span>
                     </Label>
-                    <Input
-                      placeholder="VD: Tenses, Nouns, Articles..."
-                      value={grammarTopic}
-                      onChange={(e) => { setGrammarTopic(e.target.value); clearError('grammarTopic'); }}
-                      className={`transition-all ${errors.grammarTopic ? 'border-red-500 ring-2 ring-red-200' : 'hover:border-primary/50'}`}
-                    />
-                    {errors.grammarTopic && (
+                    <Select
+                      value={grammarTopicId}
+                      onValueChange={(val) => { setGrammarTopicId(val); clearError('grammarTopicId'); }}
+                    >
+                      <SelectTrigger className={`hover:border-primary/50 transition-colors ${errors.grammarTopicId ? 'border-red-500 ring-2 ring-red-200' : ''}`}>
+                        <SelectValue placeholder="Chọn chủ đề ngữ pháp" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {grammarTopics.map((topic) => (
+                          <SelectItem key={topic.id} value={topic.id}>
+                            {topic.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.grammarTopicId && (
                       <p className="text-xs text-red-500 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> {errors.grammarTopic}
+                        <AlertCircle className="w-3 h-3" /> {errors.grammarTopicId}
                       </p>
                     )}
                   </div>

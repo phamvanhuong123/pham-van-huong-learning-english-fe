@@ -8,6 +8,7 @@ import { FlashcardView } from './FlashcardView';
 import { SM2RatingButtons } from './SM2RatingButtons';
 import { fetchDueVocabs, reviewVocab } from '@/services/vocabApi';
 import type { Vocab, SM2Rating, SessionSummary } from '@/types/vocab';
+import { cn } from '@/lib/utils';
 
 export function FlashcardContainer() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export function FlashcardContainer() {
   const { data, isLoading } = useQuery({
     queryKey: ['vocab', 'due'],
     queryFn: fetchDueVocabs,
-    staleTime: 0, // Always fresh when starting a session
+    staleTime: 0,
   });
 
   // ─── Local Session State ──────────────────────────────────────────────────
@@ -53,6 +54,10 @@ export function FlashcardContainer() {
   // ─── Logic ─────────────────────────────────────────────────────────────────
   const currentVocab = queue[currentIndex];
 
+  const toggleFlip = useCallback(() => {
+    setIsFlipped(prev => !prev);
+  }, []);
+
   const handleRate = useCallback((rating: SM2Rating) => {
     if (!currentVocab || !isFlipped) return;
 
@@ -67,15 +72,14 @@ export function FlashcardContainer() {
 
     if (rating === 0) {
       // "Again" Logic: Move to the end of the current queue
+      // Don't call API yet, it will be reviewed again in this session
       setQueue(prev => {
         const next = [...prev];
         const item = next[currentIndex];
-        // Don't call API immediately for 'Again', it stays in the session
-        // Actually the prompt says "không gọi API ngay", so we just move it.
         next.push(item);
         return next;
       });
-      // Move to next card
+      
       setCurrentIndex(prev => prev + 1);
       setIsFlipped(false);
     } else {
@@ -91,19 +95,17 @@ export function FlashcardContainer() {
     }
   }, [currentVocab, currentIndex, isFlipped, queue, doReview]);
 
-  const toggleFlip = useCallback(() => {
-    setIsFlipped(prev => !prev);
-  }, []);
-
 
   // ─── Keyboard Shortcuts ───────────────────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isFinished) return;
 
-      if (e.code === 'Space') {
+      if (e.code === 'Space' || e.code === 'Enter') {
         e.preventDefault();
-        toggleFlip();
+        if (!isFlipped) {
+          toggleFlip();
+        }
       } else if (isFlipped) {
         if (e.key === '1') handleRate(0);
         else if (e.key === '2') handleRate(1);
@@ -118,7 +120,6 @@ export function FlashcardContainer() {
 
   // ─── Render States ────────────────────────────────────────────────────────
   
-  // Loading
   if (isLoading && !hasStarted) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -128,7 +129,6 @@ export function FlashcardContainer() {
     );
   }
 
-  // Finished State
   if (isFinished) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] max-w-xl mx-auto px-6 text-center animate-in fade-in zoom-in duration-300">
@@ -137,7 +137,7 @@ export function FlashcardContainer() {
         </div>
         <h2 className="text-3xl font-bold text-foreground mb-2">Phiên ôn hoàn thành! 🎉</h2>
         <p className="text-muted-foreground mb-8">
-          Bạn đã hoàn thành việc ôn tập {summary.total} từ vựng của hôm nay.
+          Bạn đã ôn tập xong {summary.total} từ vựng của hôm nay.
         </p>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full mb-10">
@@ -162,60 +162,58 @@ export function FlashcardContainer() {
         <div className="flex flex-col sm:flex-row gap-3 w-full">
           <Button 
             variant="outline" 
-            className="flex-1 h-12"
+            className="flex-1 h-12 rounded-xl"
             onClick={() => navigate('/vocab')}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Về Vocab Manager
           </Button>
           <Button 
-            className="flex-1 h-12 bg-accent text-accent-foreground hover:bg-accent/90"
-            onClick={() => navigate(0)} // Refresh to start new session
+            className="flex-1 h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={() => navigate(0)}
           >
             <Layers className="mr-2 h-4 w-4" />
-            Ôn tập tiếp
+            Tiếp tục ôn tập
           </Button>
         </div>
       </div>
     );
   }
 
-  // Empty State (No due vocabs)
   if (hasStarted && queue.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
         <div className="text-6xl mb-4">🎉</div>
         <h2 className="text-2xl font-bold text-foreground mb-2">Tuyệt vời!</h2>
         <p className="text-muted-foreground mb-6">Bạn đã hoàn thành toàn bộ mục tiêu ôn tập hôm nay.</p>
-        <Button onClick={() => navigate('/vocab')}>
+        <Button onClick={() => navigate('/vocab')} className="rounded-xl px-8">
           Về trang quản lý
         </Button>
       </div>
     );
   }
 
-  // Active Session
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8 flex flex-col items-center">
+    <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col items-center">
       {/* Header Info */}
-      <div className="w-full flex items-center justify-between mb-8">
+      <div className="w-full flex items-center justify-between mb-12">
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={() => navigate('/vocab')}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground rounded-xl"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Thoát
         </Button>
         
-        <div className="flex flex-col items-end">
-          <div className="text-sm font-medium text-foreground">
-            Thẻ {currentIndex + 1} / {queue.length}
+        <div className="flex flex-col items-end gap-2">
+          <div className="text-sm font-bold text-foreground/70 uppercase tracking-widest">
+            {currentIndex + 1} / {queue.length}
           </div>
-          <div className="w-32 h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
+          <div className="w-48 h-2 bg-muted rounded-full overflow-hidden border border-border/10">
             <div 
-              className="h-full bg-primary transition-all duration-300"
+              className="h-full bg-primary transition-all duration-500 ease-out"
               style={{ width: `${((currentIndex + 1) / queue.length) * 100}%` }}
             />
           </div>
@@ -232,18 +230,36 @@ export function FlashcardContainer() {
       )}
 
       {/* Ratings Area */}
-      <SM2RatingButtons 
-        onRate={handleRate} 
-        disabled={!isFlipped} 
-      />
+      <div className={cn(
+        "w-full transition-all duration-500",
+        isFlipped ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 pointer-events-none"
+      )}>
+        <SM2RatingButtons 
+          onRate={handleRate} 
+          disabled={!isFlipped} 
+          schedule={currentVocab?.schedule}
+        />
+      </div>
+
+      {!isFlipped && (
+        <div className="mt-12 animate-bounce">
+          <Button 
+            variant="secondary" 
+            className="rounded-full px-12 h-14 text-lg font-bold shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={toggleFlip}
+          >
+            Show Answer
+          </Button>
+        </div>
+      )}
 
       {/* Tips */}
-      <div className="mt-12 flex items-center gap-6 text-[11px] text-muted-foreground/60 uppercase tracking-widest font-medium border-t border-border/50 pt-6">
-        <div className="flex items-center gap-1.5">
-          <kbd className="bg-muted px-1.5 py-0.5 rounded border border-border shadow-sm">Space</kbd> Lật thẻ
+      <div className="mt-20 flex items-center gap-8 text-[10px] text-muted-foreground/40 uppercase tracking-[0.2em] font-bold">
+        <div className="flex items-center gap-2">
+          <kbd className="bg-muted px-2 py-1 rounded-md border border-border shadow-sm">Space</kbd> Lật thẻ
         </div>
-        <div className="flex items-center gap-1.5">
-          <kbd className="bg-muted px-1.5 py-0.5 rounded border border-border shadow-sm">1-4</kbd> Đánh giá
+        <div className="flex items-center gap-2">
+          <kbd className="bg-muted px-2 py-1 rounded-md border border-border shadow-sm">1-4</kbd> Đánh giá
         </div>
       </div>
     </div>

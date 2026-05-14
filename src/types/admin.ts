@@ -95,42 +95,54 @@ export interface QuestionOption {
 
 export interface Question {
   id: string;
-  examId: string;
+  examId: string | null;
   passageGroupId?: string | null;
   order: number;
-  questionText: string;
+  questionText: string | null;
   options: QuestionOption[];
   explanation: string;
-  grammarTopic: string;
+  grammarTopic: string | null;
+  grammarTopicId?: string | null;
   difficulty: QuestionDifficulty;
   status: QuestionStatus;
   metadata?: any;
   createdAt: string;
   updatedAt: string;
-  examTitle: string;
+  examTitle?: string;
   passageGroup?: PassageGroup;
 }
 
+// Alias for consistency with backend if needed
+export type AdminQuestionItem = Question;
+
+export interface AdminQuestionsResponse {
+  questions: Question[];
+  pagination: PaginationMeta;
+}
+
 export interface QuestionCreateBody {
-  examId: string;
+  examId?: string | null;
   passageGroupId?: string;
   order: number;
-  questionText: string;
+  questionText: string | null;
   options: QuestionOption[];
   explanation: string;
-  grammarTopic: string;
+  grammarTopic?: string | null;
+  grammarTopicId?: string | null;
   difficulty: QuestionDifficulty;
   metadata?: any;
   status?: QuestionStatus;
 }
 
 export interface QuestionUpdateBody {
+  examId?: string | null;
   passageGroupId?: string;
   order?: number;
-  questionText?: string;
+  questionText?: string | null;
   options?: QuestionOption[];
   explanation?: string;
-  grammarTopic?: string;
+  grammarTopic?: string | null;
+  grammarTopicId?: string | null;
   difficulty?: QuestionDifficulty;
   metadata?: any;
   status?: QuestionStatus;
@@ -225,4 +237,30 @@ export interface PaginationMeta {
   limit: number;
   total: number;
   totalPages: number;
+}
+
+// ─── Grammar Topics ──────────────────────────────────────────────────────────
+
+export interface GrammarTopicItem {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    questions: number;
+  };
+}
+
+export interface GrammarTopicCreateBody {
+  name: string;
+  slug: string;
+  description?: string;
+}
+
+export interface GrammarTopicUpdateBody {
+  name?: string;
+  slug?: string;
+  description?: string;
 }

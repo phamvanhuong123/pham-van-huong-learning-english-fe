@@ -25,6 +25,8 @@ import AnalyticsPage from "@/modules/analytics/pages/AnalyticsPage";
 import ExamResultPage from "@/modules/exams/pages/ExamResultPage";
 import PricingPage from "@/modules/subscription/pages/PricingPage";
 import { ExamWorkspacePage } from "@/modules/workspace/ExamWorkspacePage";
+import GrammarTopicListPage from "@/modules/grammar/pages/GrammarTopicListPage";
+import GrammarPracticePage from "@/modules/grammar/pages/GrammarPracticePage";
 
 function ClientRoutes(){
     return (
@@ -38,6 +40,8 @@ function ClientRoutes(){
                 <Route path="history" element={<ExamHistoryPage />} />
                 <Route path="analytics" element={<AnalyticsPage />} />
                 <Route path="results/:resultId" element={<ExamResultPage />} />
+                <Route path="grammar" element={<GrammarTopicListPage />} />
+                <Route path="grammar/:topicSlug" element={<GrammarPracticePage />} />
                 <Route path="pricing" element={<PricingPage />} />
             </Route>
             <Route path="/workspace/:examId" element={<ExamWorkspacePage />} />
