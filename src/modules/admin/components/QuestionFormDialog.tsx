@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -43,6 +43,7 @@ interface QuestionFormDialogProps {
   initialData?: any;
   exams: ExamOption[];
   isPending: boolean;
+  defaultQuestionType?: 'EXAM' | 'BANK';
 }
 
 const BLANK_OPTIONS = (): { label: OptionLabel; text: string; isCorrect: boolean }[] => [
@@ -59,6 +60,7 @@ export function QuestionFormDialog({
   initialData,
   exams,
   isPending,
+  defaultQuestionType = 'EXAM',
 }: QuestionFormDialogProps) {
   const [questionType, setQuestionType] = useState<'EXAM' | 'BANK'>('EXAM');
   const [examId, setExamId] = useState('');
@@ -88,6 +90,9 @@ export function QuestionFormDialog({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPreview, setShowPreview] = useState(false);
 
+  const hasInitializedRef = (useState(false))[1]; // Hack to use state-like persistence or just use a ref
+  const initializedRef = useRef(false);
+
   // ─── Tính toán Part của đề đang được chọn ────────────────────────────────
   const selectedExamPart = useMemo(() => {
     if (!examId) return null;
@@ -95,80 +100,64 @@ export function QuestionFormDialog({
     return found?.part ?? null;
   }, [examId, exams]);
 
-  // Part 1, 2, 3, 4, 6 hoặc 7 đều cần nội dung đi kèm (Audio/Ảnh/Đoạn văn)
-  const requiresPassage = ['PART1', 'PART2', 'PART3', 'PART4', 'PART6', 'PART7'].includes(selectedExamPart ?? '');
+  const requiresPassage = questionType === 'EXAM' && ['PART1', 'PART2', 'PART3', 'PART4', 'PART6', 'PART7'].includes(selectedExamPart ?? '');
 
-  // Part 1, 2, 6 thường không có text câu hỏi riêng
   const isQuestionTextOptional = useMemo(() => {
-    return ['PART1', 'PART2', 'PART6'].includes(selectedExamPart ?? '');
-  }, [selectedExamPart]);
+    return questionType === 'EXAM' && ['PART1', 'PART2', 'PART6'].includes(selectedExamPart ?? '');
+  }, [selectedExamPart, questionType]);
 
-  // ─── Khởi tạo form ────────────────────────────────────────────────────────
   useEffect(() => {
-    if (examId && requiresPassage) {
+    if (isOpen) {
+      if (grammarTopics.length === 0) {
+        fetchGrammarTopics().then(setGrammarTopics).catch(() => setGrammarTopics([]));
+      }
+      if (!initializedRef.current) {
+        if (initialData) {
+          setQuestionType(initialData.examId ? 'EXAM' : 'BANK');
+          setExamId(initialData.examId || '');
+          setOrder(initialData.order || 1);
+          setPassageGroupId(initialData.passageGroupId || '');
+          setQuestionText(initialData.questionText || '');
+          setOptions(initialData.options?.length === 4 ? initialData.options : BLANK_OPTIONS());
+          setGrammarTopic(initialData.grammarTopic || '');
+          setGrammarTopicId(initialData.grammarTopicId || '');
+          setDifficulty(initialData.difficulty || 'EASY');
+          setExplanation(initialData.explanation || '');
+          setMetadata(initialData.metadata || { hideQuestionText: false, hideOptionsText: false });
+        } else {
+          setQuestionType(defaultQuestionType);
+          setExamId('');
+          setOrder(1);
+          setPassageGroupId('');
+          setQuestionText('');
+          setOptions(BLANK_OPTIONS());
+          setGrammarTopic('');
+          setGrammarTopicId('');
+          setDifficulty('EASY');
+          setExplanation('');
+          setMetadata({ hideQuestionText: false, hideOptionsText: false });
+          setShowPreview(false);
+        }
+        initializedRef.current = true;
+        setErrors({});
+      }
+    } else {
+      initializedRef.current = false;
+    }
+  }, [isOpen, initialData, grammarTopics.length]);
+
+  // Fetch passage groups when exam/type changes
+  useEffect(() => {
+    if (isOpen && examId && requiresPassage) {
       setIsLoadingGroups(true);
       adminApi.getPassageGroups(examId)
         .then(setPassageGroups)
         .catch(() => setPassageGroups([]))
         .finally(() => setIsLoadingGroups(false));
-    } else {
-      setPassageGroups([]);
     }
-  }, [examId, requiresPassage]);
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchGrammarTopics().then(setGrammarTopics).catch(() => setGrammarTopics([]));
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (isOpen) {
-      if (initialData) {
-        setQuestionType(initialData.examId ? 'EXAM' : 'BANK');
-        setExamId(initialData.examId || '');
-        setOrder(initialData.order || 1);
-        setPassageGroupId(initialData.passageGroupId || '');
-        setQuestionText(initialData.questionText || '');
-        setOptions(
-          initialData.options?.length === 4 ? initialData.options : BLANK_OPTIONS(),
-        );
-        setGrammarTopic(initialData.grammarTopic || '');
-        setGrammarTopicId(initialData.grammarTopicId || '');
-        setDifficulty(initialData.difficulty || 'EASY');
-        setExplanation(initialData.explanation || '');
-        setMetadata(initialData.metadata || { hideQuestionText: false, hideOptionsText: false });
-      } else {
-        setQuestionType('EXAM');
-        setExamId('');
-        setOrder(1);
-        setPassageGroupId('');
-        setQuestionText('');
-        setOptions(BLANK_OPTIONS());
-        setGrammarTopic('');
-        setGrammarTopicId('');
-        setDifficulty('EASY');
-        setExplanation('');
-        setMetadata({ hideQuestionText: false, hideOptionsText: false });
-      }
-      setErrors({});
-      setShowPreview(false);
-    }
-  }, [isOpen, initialData]);
+  }, [isOpen, examId, requiresPassage]);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
-  // Helper to strip HTML tags for preview/labels
-  const stripHtml = (html: string) => {
-    const tmp = document.createElement("DIV");
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || "";
-  };
-
-  const getVideoThumbnail = (url: string) => {
-    if (!url) return '';
-    // Hỗ trợ Cloudinary: đổi đuôi mp4/mov/etc sang jpg
-    return url.replace(/\.(mp4|mov|avi|wmv|flv|mkv|webm)$/i, '.jpg');
-  };
   const handleOptionChange = (index: number, text: string) => {
     const newOptions = [...options];
     newOptions[index].text = text;
@@ -284,14 +273,11 @@ export function QuestionFormDialog({
     try {
       await adminApi.deletePassageGroup(passageGroupId);
       toast.success('Đã xóa cụm nội dung thành công');
-      
-      // Refresh list
       const updatedGroups = await adminApi.getPassageGroups(examId);
       setPassageGroups(updatedGroups);
       setPassageGroupId('');
       setIsDeleteDialogOpen(false);
     } catch (error: any) {
-      console.error('Failed to delete passage group', error);
       const msg = error.response?.data?.message || 'Không thể xóa cụm nội dung.';
       toast.error(msg);
     } finally {
@@ -342,7 +328,10 @@ export function QuestionFormDialog({
 
   // ─── Save handlers ─────────────────────────────────────────────────────────
   const handleSave = async (status: 'DRAFT' | 'PUBLISHED', isContinue = false) => {
-    if (!validate()) return;
+    if (!validate()) {
+      toast.error('Vui lòng kiểm tra lại các trường thông tin bắt buộc');
+      return;
+    }
     await onSave(
       {
         examId: questionType === 'EXAM' ? examId : null,
@@ -447,7 +436,10 @@ export function QuestionFormDialog({
                     variant={questionType === 'EXAM' ? 'default' : 'ghost'}
                     size="sm"
                     className="flex-1 h-9"
-                    onClick={() => setQuestionType('EXAM')}
+                    onClick={() => {
+                      setQuestionType('EXAM');
+                      setErrors({});
+                    }}
                   >
                     <BookOpen className="w-4 h-4 mr-2" /> Câu hỏi đề thi
                   </Button>
@@ -456,59 +448,118 @@ export function QuestionFormDialog({
                     variant={questionType === 'BANK' ? 'default' : 'ghost'}
                     size="sm"
                     className="flex-1 h-9"
-                    onClick={() => setQuestionType('BANK')}
+                    onClick={() => {
+                      setQuestionType('BANK');
+                      setErrors({});
+                    }}
                   >
                     <Library className="w-4 h-4 mr-2" /> Ngân hàng ngữ pháp
                   </Button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                  <div className={`sm:col-span-8 lg:col-span-9 space-y-2 ${questionType === 'BANK' ? 'opacity-50 pointer-events-none' : ''}`}>
-                    <Label className="text-sm font-medium">
-                      Đề thi <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={examId}
-                      onValueChange={(val) => { setExamId(val); clearError('examId'); }}
-                      disabled={questionType === 'BANK'}
-                    >
-                      <SelectTrigger
-                        className={`w-full transition-all ${errors.examId ? 'border-red-500 ring-2 ring-red-200' : 'hover:border-primary/50'}`}
-                      >
-                        <SelectValue placeholder="Chọn đề thi" className="truncate" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {exams.map((ex) => (
-                          <SelectItem key={ex.id} value={ex.id}>
-                            <span className="flex items-center gap-2">
-                              {ex.part && partBadge[ex.part] && (
-                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${partBadge[ex.part].color}`}>
-                                  {ex.part}
+                  {questionType === 'EXAM' ? (
+                    <>
+                      <div className="sm:col-span-8 lg:col-span-9 space-y-2">
+                        <Label className="text-sm font-medium">
+                          Đề thi <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={examId}
+                          onValueChange={(val) => { setExamId(val); clearError('examId'); }}
+                        >
+                          <SelectTrigger
+                            className={`w-full transition-all ${errors.examId ? 'border-red-500 ring-2 ring-red-200' : 'hover:border-primary/50'}`}
+                          >
+                            <SelectValue placeholder="Chọn đề thi" className="truncate" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {exams.map((ex) => (
+                              <SelectItem key={ex.id} value={ex.id}>
+                                <span className="flex items-center gap-2">
+                                  {ex.part && partBadge[ex.part] && (
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${partBadge[ex.part].color}`}>
+                                      {ex.part}
+                                    </span>
+                                  )}
+                                  {ex.title}
                                 </span>
-                              )}
-                              {ex.title}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.examId && (
-                      <p className="text-xs text-red-500 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> {errors.examId}
-                      </p>
-                    )}
-                  </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.examId && (
+                          <p className="text-xs text-red-500 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" /> {errors.examId}
+                          </p>
+                        )}
+                      </div>
 
-                  <div className="sm:col-span-4 lg:col-span-3 space-y-2">
-                    <Label className="text-sm font-medium text-nowrap">Thứ tự câu</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={order}
-                      onChange={(e) => setOrder(Number(e.target.value))}
-                      className="w-full hover:border-primary/50 transition-colors"
-                    />
-                  </div>
+                      <div className="sm:col-span-4 lg:col-span-3 space-y-2">
+                        <Label className="text-sm font-medium text-nowrap">Thứ tự câu</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={order}
+                          onChange={(e) => setOrder(Number(e.target.value))}
+                          className="w-full hover:border-primary/50 transition-colors"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="sm:col-span-8 lg:col-span-8 space-y-2">
+                        <Label className="text-sm font-medium">
+                          Chủ đề ngữ pháp <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={grammarTopicId}
+                          onValueChange={(val) => { 
+                            setGrammarTopicId(val); 
+                            const topicName = grammarTopics.find(t => t.id === val)?.name || '';
+                            setGrammarTopic(topicName);
+                            clearError('grammarTopicId'); 
+                          }}
+                        >
+                          <SelectTrigger className={`w-full hover:border-primary/50 transition-colors ${errors.grammarTopicId ? 'border-red-500 ring-2 ring-red-200' : ''}`}>
+                            <SelectValue placeholder="Chọn chủ đề ngữ pháp" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {grammarTopics.map((topic) => (
+                              <SelectItem key={topic.id} value={topic.id}>
+                                {topic.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.grammarTopicId && (
+                          <p className="text-xs text-red-500 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" /> {errors.grammarTopicId}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="sm:col-span-4 lg:col-span-4 space-y-2">
+                        <Label className="text-sm font-medium">Độ khó</Label>
+                        <Select value={difficulty} onValueChange={(val: QuestionDifficulty) => setDifficulty(val)}>
+                          <SelectTrigger className="hover:border-primary/50 transition-colors">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="EASY">
+                              <span className="flex items-center gap-2"><span className="w-2 h-2 bg-green-500 rounded-full" />Dễ</span>
+                            </SelectItem>
+                            <SelectItem value="MEDIUM">
+                              <span className="flex items-center gap-2"><span className="w-2 h-2 bg-yellow-500 rounded-full" />Trung bình</span>
+                            </SelectItem>
+                            <SelectItem value="HARD">
+                              <span className="flex items-center gap-2"><span className="w-2 h-2 bg-red-500 rounded-full" />Khó</span>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {questionType === 'EXAM' && requiresPassage ? (
@@ -740,7 +791,7 @@ export function QuestionFormDialog({
                     <Info className="w-4 h-4 text-blue-400 shrink-0" />
                     <span>Part 5 — Grammar: Không cần đoạn văn. Mỗi câu hỏi đứng độc lập.</span>
                   </div>
-                ) : !examId ? (
+                ) : (questionType === 'EXAM' && !examId) ? (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 border border-dashed px-4 py-3 rounded-lg">
                     <Info className="w-4 h-4 shrink-0" />
                     <span>Chọn đề thi để biết câu hỏi này có cần đoạn văn hay không.</span>
@@ -789,51 +840,53 @@ export function QuestionFormDialog({
                   )}
                 </div>
 
-                <div className={`space-y-3 p-3 sm:p-5 rounded-xl border-2 transition-all ${
+                <div className={`space-y-4 p-4 sm:p-6 rounded-lg border-2 transition-all ${
                   errors.options
                     ? 'border-red-300 bg-red-50/50'
-                    : 'border-dashed border-muted-foreground/20 bg-muted/30'
+                    : 'border-dashed border-muted-foreground/20 bg-muted/20'
                 }`}>
-                  {options.map((opt, idx) => (
-                    <div key={idx} className="flex items-start gap-3 group">
-                      <label className={`flex items-center justify-center w-10 h-10 rounded-full border-2 cursor-pointer transition-all mt-1 flex-shrink-0 ${
-                        opt.isCorrect
-                          ? 'bg-gradient-to-br from-green-500 to-green-600 border-green-600 shadow-lg shadow-green-200'
-                          : 'border-muted-foreground/30 hover:border-primary/50 hover:bg-primary/5'
-                      }`}>
-                        <input
-                          type="radio"
-                          name="correct-option"
-                          className="sr-only"
-                          checked={opt.isCorrect}
-                          onChange={() => handleCorrectChange(idx)}
-                        />
-                        <span className={`text-sm font-bold ${opt.isCorrect ? 'text-white' : 'text-foreground group-hover:text-primary'}`}>
-                          {opt.label}
-                        </span>
-                      </label>
-                      <div className="flex-1 space-y-1">
-                        <Input
-                          placeholder={`Nhập đáp án ${opt.label}...`}
-                          value={opt.text}
-                          onChange={(e) => {
-                            handleOptionChange(idx, e.target.value);
-                            clearError('optionTexts');
-                          }}
-                          className={`transition-all ${
-                            errors.optionTexts && !opt.text.trim()
-                              ? 'border-red-500 ring-2 ring-red-200'
-                              : 'hover:border-primary/50'
-                          } ${opt.isCorrect ? 'bg-green-50/50 border-green-300' : ''}`}
-                        />
-                        {opt.isCorrect && (
-                          <p className="text-xs text-green-600 font-medium ml-1 flex items-center gap-1">
-                            <Check className="w-3 h-3" /> Đáp án đúng
-                          </p>
-                        )}
+                  <div className="grid grid-cols-1 gap-4">
+                    {options.map((opt, idx) => (
+                      <div key={idx} className="flex items-start gap-4 group">
+                        <label className={`flex items-center justify-center w-11 h-11 rounded-lg border-2 cursor-pointer transition-all mt-0 flex-shrink-0 shadow-sm ${
+                          opt.isCorrect
+                            ? 'bg-gradient-to-br from-green-500 to-green-600 border-green-600 shadow-green-100 ring-2 ring-green-500/20'
+                            : 'bg-white border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5'
+                        }`}>
+                          <input
+                            type="radio"
+                            name="correct-option"
+                            className="sr-only"
+                            checked={opt.isCorrect}
+                            onChange={() => handleCorrectChange(idx)}
+                          />
+                          <span className={`text-base font-extrabold ${opt.isCorrect ? 'text-white' : 'text-muted-foreground group-hover:text-primary'}`}>
+                            {opt.label}
+                          </span>
+                        </label>
+                        <div className="flex-1 space-y-1.5">
+                          <Input
+                            placeholder={`Nhập đáp án ${opt.label}...`}
+                            value={opt.text}
+                            onChange={(e) => {
+                              handleOptionChange(idx, e.target.value);
+                              clearError('optionTexts');
+                            }}
+                            className={`h-11 rounded-lg transition-all text-sm font-medium ${
+                              errors.optionTexts && !opt.text.trim()
+                                ? 'border-red-500 ring-4 ring-red-100 shadow-none'
+                                : 'hover:border-primary/50 focus:ring-4 focus:ring-primary/10'
+                            } ${opt.isCorrect ? 'bg-green-50/80 border-green-400 shadow-sm shadow-green-50' : 'bg-white'}`}
+                          />
+                          {opt.isCorrect && (
+                            <p className="text-[10px] text-green-600 font-bold uppercase tracking-wider ml-1 flex items-center gap-1.5">
+                              <Check className="w-3.5 h-3.5" /> Đáp án đúng
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                   {errors.optionTexts && (
                     <p className="text-xs text-red-500 flex items-center gap-1 pt-2">
                       <AlertCircle className="w-3 h-3" /> {errors.optionTexts}
@@ -848,79 +901,88 @@ export function QuestionFormDialog({
                   <Settings2 className="w-5 h-5" /> Thông tin bổ sung & Hiển thị
                 </h3>
 
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
-                  <Label className="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-2">
-                    <Eye className="w-3 h-3" /> Cấu hình hiển thị (Dùng cho Listening)
-                  </Label>
-                  <div className="flex flex-wrap gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <div className={`w-10 h-6 rounded-full p-1 transition-colors ${metadata?.hideQuestionText ? 'bg-primary' : 'bg-muted'}`}
-                        onClick={() => setMetadata((prev: any) => ({ ...prev, hideQuestionText: !prev.hideQuestionText }))}>
-                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${metadata?.hideQuestionText ? 'translate-x-4' : 'translate-x-0'}`} />
-                      </div>
-                      <span className="text-xs font-medium text-amber-900">Ẩn text câu hỏi</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <div className={`w-10 h-6 rounded-full p-1 transition-colors ${metadata?.hideOptionsText ? 'bg-primary' : 'bg-muted'}`}
-                        onClick={() => setMetadata((prev: any) => ({ ...prev, hideOptionsText: !prev.hideOptionsText }))}>
-                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${metadata?.hideOptionsText ? 'translate-x-4' : 'translate-x-0'}`} />
-                      </div>
-                      <span className="text-xs font-medium text-amber-900">Ẩn text đáp án</span>
-                    </label>
-                  </div>
-                  <p className="text-[10px] text-amber-700 italic leading-relaxed">
-                    * Lưu ý: Part 1 & 2 thường ẩn cả text câu hỏi và đáp án. Học viên chỉ chọn A/B/C/D dựa trên những gì nghe được.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Chủ đề ngữ pháp <span className="text-red-500">*</span>
+                {questionType === 'EXAM' && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
+                    <Label className="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-2">
+                      <Eye className="w-3 h-3" /> Cấu hình hiển thị (Dùng cho Listening)
                     </Label>
-                    <Select
-                      value={grammarTopicId}
-                      onValueChange={(val) => { setGrammarTopicId(val); clearError('grammarTopicId'); }}
-                    >
-                      <SelectTrigger className={`hover:border-primary/50 transition-colors ${errors.grammarTopicId ? 'border-red-500 ring-2 ring-red-200' : ''}`}>
-                        <SelectValue placeholder="Chọn chủ đề ngữ pháp" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {grammarTopics.map((topic) => (
-                          <SelectItem key={topic.id} value={topic.id}>
-                            {topic.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.grammarTopicId && (
-                      <p className="text-xs text-red-500 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> {errors.grammarTopicId}
-                      </p>
-                    )}
-                  </div>
+                    <div className="flex flex-wrap gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <div className={`w-10 h-6 rounded-full p-1 transition-colors ${metadata?.hideQuestionText ? 'bg-primary' : 'bg-muted'}`}
+                          onClick={() => setMetadata((prev: any) => ({ ...prev, hideQuestionText: !prev.hideQuestionText }))}>
+                          <div className={`w-4 h-4 bg-white rounded-full transition-transform ${metadata?.hideQuestionText ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </div>
+                        <span className="text-xs font-medium text-amber-900">Ẩn text câu hỏi</span>
+                      </label>
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Độ khó</Label>
-                    <Select value={difficulty} onValueChange={(val: QuestionDifficulty) => setDifficulty(val)}>
-                      <SelectTrigger className="hover:border-primary/50 transition-colors">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="EASY">
-                          <span className="flex items-center gap-2"><span className="w-2 h-2 bg-green-500 rounded-full" />Dễ</span>
-                        </SelectItem>
-                        <SelectItem value="MEDIUM">
-                          <span className="flex items-center gap-2"><span className="w-2 h-2 bg-yellow-500 rounded-full" />Trung bình</span>
-                        </SelectItem>
-                        <SelectItem value="HARD">
-                          <span className="flex items-center gap-2"><span className="w-2 h-2 bg-red-500 rounded-full" />Khó</span>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <div className={`w-10 h-6 rounded-full p-1 transition-colors ${metadata?.hideOptionsText ? 'bg-primary' : 'bg-muted'}`}
+                          onClick={() => setMetadata((prev: any) => ({ ...prev, hideOptionsText: !prev.hideOptionsText }))}>
+                          <div className={`w-4 h-4 bg-white rounded-full transition-transform ${metadata?.hideOptionsText ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </div>
+                        <span className="text-xs font-medium text-amber-900">Ẩn text đáp án</span>
+                      </label>
+                    </div>
+                    <p className="text-[10px] text-amber-700 italic leading-relaxed">
+                      * Lưu ý: Part 1 & 2 thường ẩn cả text câu hỏi và đáp án. Học viên chỉ chọn A/B/C/D dựa trên những gì nghe được.
+                    </p>
                   </div>
-                </div>
+                )}
+
+                {questionType === 'EXAM' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">
+                        Chủ đề ngữ pháp <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={grammarTopicId}
+                        onValueChange={(val) => { 
+                          setGrammarTopicId(val); 
+                          const topicName = grammarTopics.find(t => t.id === val)?.name || '';
+                          setGrammarTopic(topicName);
+                          clearError('grammarTopicId'); 
+                        }}
+                      >
+                        <SelectTrigger className={`hover:border-primary/50 transition-colors ${errors.grammarTopicId ? 'border-red-500 ring-2 ring-red-200' : ''}`}>
+                          <SelectValue placeholder="Chọn chủ đề ngữ pháp" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {grammarTopics.map((topic) => (
+                            <SelectItem key={topic.id} value={topic.id}>
+                              {topic.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.grammarTopicId && (
+                        <p className="text-xs text-red-500 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> {errors.grammarTopicId}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Độ khó</Label>
+                      <Select value={difficulty} onValueChange={(val: QuestionDifficulty) => setDifficulty(val)}>
+                        <SelectTrigger className="hover:border-primary/50 transition-colors">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="EASY">
+                            <span className="flex items-center gap-2"><span className="w-2 h-2 bg-green-500 rounded-full" />Dễ</span>
+                          </SelectItem>
+                          <SelectItem value="MEDIUM">
+                            <span className="flex items-center gap-2"><span className="w-2 h-2 bg-yellow-500 rounded-full" />Trung bình</span>
+                          </SelectItem>
+                          <SelectItem value="HARD">
+                            <span className="flex items-center gap-2"><span className="w-2 h-2 bg-red-500 rounded-full" />Khó</span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
 
                 <RichTextEditor
                   label="Giải thích *"
@@ -983,7 +1045,7 @@ export function QuestionFormDialog({
               {isPending ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Đang lưu...</>
               ) : (
-                <><CheckCircle2 className="w-4 h-4 mr-2" /> Publish</>
+                <><CheckCircle2 className="w-4 h-4 mr-2" /> Lưu & Công khai</>
               )}
             </Button>
           </div>

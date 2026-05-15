@@ -299,6 +299,7 @@ export function QuestionBankContainer() {
           initialData={editingQuestion}
           exams={examsList}
           isPending={saveMutation.isPending}
+          defaultQuestionType="BANK"
         />
       )}
 

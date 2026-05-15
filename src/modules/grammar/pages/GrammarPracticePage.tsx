@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { fetchGrammarPractice } from '@/services/grammarClientApi';
+import { fetchGrammarPractice, submitGrammarPractice } from '@/services/grammarClientApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
@@ -28,6 +28,8 @@ export default function GrammarPracticePage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
+  const [userAnswers, setUserAnswers] = useState<{ questionId: string; optionId: string | null; isCorrect: boolean }[]>([]);
+  const startTimeRef = useRef<number>(Date.now());
 
   const { data: questions, isLoading, refetch } = useQuery<any[]>({
     queryKey: ['grammar', 'practice', topicSlug],
@@ -49,18 +51,36 @@ export default function GrammarPracticePage() {
     }
     setIsSubmitted(true);
     const correctOption = currentQuestion.options.find((o: any) => o.isCorrect);
-    if (selectedOption === correctOption?.id) {
+    const isCorrect = selectedOption === correctOption?.id;
+    
+    if (isCorrect) {
       setScore((prev) => prev + 1);
     }
+
+    setUserAnswers(prev => [
+      ...prev,
+      { questionId: currentQuestion.id, optionId: selectedOption, isCorrect }
+    ]);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentIndex < (questions?.length || 0) - 1) {
       setCurrentIndex((prev) => prev + 1);
       setSelectedOption(null);
       setIsSubmitted(false);
     } else {
       setIsFinished(true);
+      // Lưu kết quả vào DB
+      try {
+        const timeTaken = Math.floor((Date.now() - startTimeRef.current) / 1000);
+        await submitGrammarPractice({
+          topicSlug,
+          answers: userAnswers,
+          timeTaken
+        });
+      } catch (error) {
+        console.error('Failed to save practice history:', error);
+      }
     }
   };
 
@@ -69,7 +89,9 @@ export default function GrammarPracticePage() {
     setSelectedOption(null);
     setIsSubmitted(false);
     setScore(0);
+    setUserAnswers([]);
     setIsFinished(false);
+    startTimeRef.current = Date.now();
     refetch();
   };
 

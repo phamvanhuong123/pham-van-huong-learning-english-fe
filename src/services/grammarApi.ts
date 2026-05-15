@@ -6,12 +6,12 @@ import type {
 } from '@/types/admin';
 
 export const fetchGrammarTopics = async (): Promise<GrammarTopicItem[]> => {
-  const { data } = await api.get('/grammar-topics');
+  const { data } = await api.get('admin/grammar-topics');
   return data;
 };
 
 export const createGrammarTopic = async (body: GrammarTopicCreateBody): Promise<GrammarTopicItem> => {
-  const { data } = await api.post('/grammar-topics', body);
+  const { data } = await api.post('admin/grammar-topics', body);
   return data;
 };
 
